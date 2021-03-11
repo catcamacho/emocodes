@@ -5,6 +5,8 @@ import numpy as np
 # get duration of video in milliseconds
 def get_video_length(video_file):
     """
+    This function checks the length of a video file and returns that value in milliseconds.
+
     Parameters
     ----------
     filename : str
@@ -23,6 +25,8 @@ def get_video_length(video_file):
 
 def compute_luminance(video_file, sampling_rate, video_duration):
     """
+    This function produces a Series of the luminance values for a video file.
+
     Parameters
     ----------
 
