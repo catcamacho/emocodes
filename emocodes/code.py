@@ -2,6 +2,48 @@
 import pandas as pd
 from datetime import datetime
 from os.path import abspath
+from emocodes.video import get_video_length
+
+# TODO write class to process Datavyu outputs
+
+
+class CodeTimeSeries:
+
+    def __init__(self, interpolate_gaps=True, sampling_rate=5):
+        self.codes_df = None
+        self.labels = None
+        self.video_duration = None
+        self.sampling_rate = sampling_rate
+        self.interpolate_gaps = interpolate_gaps
+        self.proc_codes_df = None
+
+    def proc_codes_file(self, codes_file, video_file, save_file_name='emocodes_time_series', file_type='csv'):
+        self.load_codes_file(codes_file)
+        self.find_video_length(video_file)
+        self.get_labels()
+        self.convert_codes()
+        self.save(save_file_name=save_file_name, file_type=file_type)
+
+    def load_codes_file(self, codes_file):
+        self.codes_df = pd.read_csv(codes_file, index_col=None)
+        return self
+
+    def get_labels(self):
+        self.labels = get_code_labels(self.codes_df)
+        return self
+
+    def find_video_length(self, video_file):
+        self.video_duration = get_video_length(video_file)
+        return self
+
+    def convert_codes(self):
+        self.proc_codes_df = validate_convert_timestamps(self.labels, self.codes_df, self.video_duration,
+                                                         self.sampling_rate, self.interpolate_gaps)
+        return self
+
+    def save(self, save_file_name='emocodes_time_series', file_type='csv'):
+        save_timeseries(self.proc_codes_df, file_type, save_file_name)
+
 
 # extract the unique code names (assumes Datavyu CSV export format)
 def get_code_labels(codes_df):
@@ -27,7 +69,7 @@ def get_code_labels(codes_df):
     return labels
     
     
-# validate and convert onset/offset times to a timeseries
+# validate and convert onset/offset times to a time series
 def validate_convert_timestamps(labels, codes_df, video_duration, sampling_rate, interpolate_gaps=True):
     """ This function performs two steps:
         1. Checks for human errors in coding such as incorrect end times or gaps in coding.
@@ -59,7 +101,9 @@ def validate_convert_timestamps(labels, codes_df, video_duration, sampling_rate,
         """
     
     # set up dataframe object to store data
-    timeseries_df = pd.DataFrame(columns=labels, index=range(int(1000/sampling_rate), video_duration+int(1000/sampling_rate), int(1000/sampling_rate)))
+    timeseries_df = pd.DataFrame(columns=labels,
+                                 index=range(int(1000/sampling_rate),
+                                             video_duration+int(1000/sampling_rate), int(1000/sampling_rate)))
     timeseries_df.index.name = 'time'
 
     for label in labels:
@@ -140,4 +184,4 @@ def save_timeseries(timeseries_df, outfile_type, outfile_name):
         print('Warning: data note saved! Please indicate the file format: csv, excel, tab, space')
     
     filepath = abspath('{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S')))
-    print('Code timeseries saved at {0}'.format(filepath))
+    print('Code time series saved at {0}'.format(filepath))

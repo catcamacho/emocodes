@@ -3,8 +3,8 @@ import pandas as pd
 
 # TODO: make function to graph values
 
-class graph_timeseries:
-    timeseries_df = timeseries_df
+class GraphTimeSeries:
+    self.timeseries_df = None
     
     def __init__(self):
 
