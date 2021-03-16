@@ -1,0 +1,12 @@
+,itemICC,meanICC
+closeup,0.132,0.432
+collective,0.865,0.95
+has_body,0.629,0.894
+has_faces,0.742,0.935
+has_words,0.485,0.825
+interacting_nonverbal,0.493,0.83
+interacting_verbal,0.721,0.928
+num_chars,0.711,0.925
+phys_pain_object,0.035,0.099
+phys_pain_other,0.162,0.367
+time_of_day,0.891,0.976

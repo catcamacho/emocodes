@@ -1,0 +1,7 @@
+,itemICC,meanICC
+audio_intensity,0.641,0.915
+audio_valence_negative,0.46,0.837
+audio_valence_positive,0.579,0.892
+visual_intensity,0.156,0.526
+visual_valence_negative,0.243,0.658
+visual_valence_positive,0.133,0.479
