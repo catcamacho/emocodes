@@ -25,7 +25,7 @@ class CodeTimeSeries:
         if not isdir('./logs'):
             mkdir('./logs')
         log_file = './logs/file_{0}.log'.format(today.strftime('%Y%m%d'))
-        emolog.basicConfig(filename=log_file, level=logging.DEBUG)
+        emolog.basicConfig(filename=log_file, level=emolog.DEBUG)
 
     def proc_codes_file(self, codes_file, video_file, save_file_name='video_codes_time_series', file_type='csv'):
         self.load_codes_file(codes_file)
