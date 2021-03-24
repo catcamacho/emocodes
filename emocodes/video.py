@@ -2,14 +2,17 @@
 import pandas as pd
 import numpy as np
 
-# get duration of video in milliseconds
+# TODO: add function on edginess on image
+# TODO: make video processing class
+
+
 def get_video_length(video_file):
     """
     This function checks the length of a video file and returns that value in milliseconds.
 
     Parameters
     ----------
-    filename : str
+    video_file : str
         The path to the video file that was coded
 
     Return
@@ -21,7 +24,8 @@ def get_video_length(video_file):
     
     clip = VideoFileClip(video_file)
     file_duration = int(clip.duration*1000)
-    return(file_duration)
+    return file_duration
+
 
 def compute_luminance(video_file, sampling_rate, video_duration):
     """
@@ -55,7 +59,7 @@ def compute_luminance(video_file, sampling_rate, video_duration):
         r, f = video.read()
         if r == 1:
             t = f.mean(axis=0).mean(axis=0)
-            lum = 0.299*t[0] + 0.587*t[1] + 0.114*t[2] # formula from https://www.w3.org/TR/AERT/#color-contrast
+            lum = 0.299*t[0] + 0.587*t[1] + 0.114*t[2]  # formula from https://www.w3.org/TR/AERT/#color-contrast
             frames_lum.append(lum)
         else:
             end = True
@@ -66,4 +70,4 @@ def compute_luminance(video_file, sampling_rate, video_duration):
     b.index.name = 'time'
     lum_series = b.resample('{0}ms'.format(1000/sampling_rate)).mean()
 
-    return(lum_series)
+    return lum_series

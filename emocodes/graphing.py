@@ -64,10 +64,12 @@ def make_cat_plot(cat_col_names, codes_df, outfile_name='categorical_plots', fil
     df = codes_df.loc[:, cat_col_names]
     fig_height = 4 * len(cat_col_names)
 
-    if len(cat_col_names)
-    fig, ax = plt.subplots(len(cat_col_names), figsize=(4, fig_height))
-    for i, x in enumerate(cat_col_names):
-        df[x].value_counts().plot(kind='pie', ax=ax[i], xlabel=' ', ylabel=' ').set_title(x)
+    if len(cat_col_names) == 0:
+        print('No variables to plot!')
+    elif len(cat_col_names) >= 1:
+        fig, ax = plt.subplots(len(cat_col_names), figsize=(4, fig_height))
+        for i, x in enumerate(cat_col_names):
+            df[x].value_counts().plot(kind='pie', ax=ax[i], xlabel=' ', ylabel=' ').set_title(x)
     plt.tight_layout()
     plt.savefig('{0}.{1}'.format(outfile_name, file_type))
 
@@ -98,6 +100,6 @@ def make_num_plot(num_col_names, codes_df, outfile_name='numerical_plots', file_
     df.resample('1s')
     fig_height = 1.5 * len(num_col_names)
     plt.figure()
-    df.plot.line(figsize=(12, fig_height), title=num_col_names, subplots=True, legend=False, xlim=(0, df.index[-1]))
+    df.plot.area(figsize=(12, fig_height), title=num_col_names, subplots=True, legend=False, xlim=(0, df.index[-1]))
     plt.tight_layout()
     plt.savefig('{0}.{1}'.format(outfile_name, file_type))
