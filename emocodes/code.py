@@ -7,6 +7,7 @@ from emocodes.video import get_video_length
 import logging as emolog
 
 # TODO: write up documentation
+# TODO: make validator class
 
 
 class CodeTimeSeries:
@@ -55,6 +56,24 @@ class CodeTimeSeries:
 
     def save(self, save_file_name='video_codes_time_series', file_type='csv'):
         save_timeseries(self.proc_codes_df, file_type, save_file_name, do_log=True)
+
+
+class ValidateTimeSeries:
+    def __init__(self):
+
+        return self
+
+    def check_gaps(self):
+
+        return self
+
+    def check_offsets(self):
+
+        return
+
+    def check_onsets(self):
+
+        return
 
 
 # extract the unique code names (assumes Datavyu CSV export format)
