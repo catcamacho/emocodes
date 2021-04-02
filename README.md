@@ -1,8 +1,8 @@
 # The EmoCodes Library
-* [About](http://github.com/catcamacho/emocodes#About)
-* [Installation](http://github.com/catcamacho/emocodes#Installation)
-* [Examples](http://github.com/catcamacho/emocodes#Example)
-* [Coming Soon](http://github.com/catcamacho/emocodes#Coming)
+* [About](http://github.com/catcamacho/emocodes#about)
+* [Installation](http://github.com/catcamacho/emocodes#installation)
+* [Examples](http://github.com/catcamacho/emocodes#example-uses)
+* [Coming Soon](http://github.com/catcamacho/emocodes#coming-soon)
 
 ## About
 
