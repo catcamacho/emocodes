@@ -216,23 +216,27 @@ def save_timeseries(timeseries_df, outfile_type, outfile_name, do_log=False):
     
     if outfile_type == 'csv':
         # save as a csv
-        timeseries_df.to_csv('{0}_{1}.csv'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S')), na_rep='NA')
+        out_file='{0}_{1}.csv'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S'))
+        timeseries_df.to_csv(out_file, na_rep='NA')
     elif outfile_type == 'excel':
         # save as an excel file
-        timeseries_df.to_excel('{0}_{1}.xlsx'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S')), na_rep='NA')
+        out_file='{0}_{1}.xlsx'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S'))
+        timeseries_df.to_excel(out_file, na_rep='NA')
     elif outfile_type == 'tab':
         # save as a tab-delimited file
-        timeseries_df.to_csv('{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S')), sep='\t', na_rep='NA')
+        out_file='{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S'))
+        timeseries_df.to_csv(out_file, sep='\t', na_rep='NA')
     elif outfile_type == 'space':
         # save as a space-delimited file
-        timeseries_df.to_csv('{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S')), sep='  ', na_rep='NA')
+        out_file='{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S'))
+        timeseries_df.to_csv(out_file, sep='  ', na_rep='NA')
     else:
         msg = 'Warning: data note saved! Please indicate the file format: csv, excel, tab, space'
         if do_log:
             emolog.warning(msg)
         print(msg)
     
-    filepath = abspath(basename('{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S'))))
+    filepath = abspath(basename(out_file))
     msg = 'Code time series saved at {0}'.format(filepath)
     if do_log:
         emolog.info(msg)

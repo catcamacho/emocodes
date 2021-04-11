@@ -45,29 +45,32 @@ def compute_luminance(video_file, sampling_rate, video_duration):
 
     Return
     ------
-    lum_series : Series
-        The Pandas Series of the luminance measure, resampled according to the user input.
+    lum_df : DataFrame
+        The Pandas dataframe of the luminance measure, resampled according to the user input.
     """
 
     import cv2
 
     video = cv2.VideoCapture(video_file)
     frames_lum = []
+    rgb = []
 
     end = False
     while not end:
         r, f = video.read()
         if r == 1:
             t = f.mean(axis=0).mean(axis=0)
-            lum = 0.299*t[0] + 0.587*t[1] + 0.114*t[2]  # formula from https://www.w3.org/TR/AERT/#color-contrast
+            lum = 0.299*t[0] + 0.587*t[1] + 0.114*t[2]
+            rgb.append(t)
             frames_lum.append(lum)
         else:
             end = True
 
     fps = (len(frames_lum)*1000)/video_duration
     a = np.arange(0, (len(frames_lum)/fps)*1000, 1000/fps)
-    b = pd.Series(frames_lum, index=pd.to_datetime(a, unit='ms'), name='luminance')
+    b = pd.DataFrame(frames_lum, index=pd.to_datetime(a, unit='ms'), columns=['luminance'])
+    b[['R','G','B']] = rgb
     b.index.name = 'time'
-    lum_series = b.resample('{0}ms'.format(1000/sampling_rate)).mean()
+    lum_df = b.resample('{0}ms'.format(1000/sampling_rate)).mean()
 
-    return lum_series
+    return lum_df

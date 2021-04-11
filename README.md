@@ -25,13 +25,35 @@ This example takes a Datavyu CSV and check for the following common errors:
 
 
 ### Convert Datavyu codes to code time series
-This example takes a Datavyu CSV and converts the codes to a timeseries for use in other analyses (such as neuroimaging).
+This example takes a Datavyu CSV ('mycodes.csv') and converts the codes to a timeseries for use in other analyses (such as neuroimaging).
 
+```
+import emocodes as ec
+
+# create instance of a CodeSeries class and set sampling rate for the output to 5Hz
+cts = ec.CodeTimeSeries(sampling_rate=5)  
+
+# use proc_codes_file to convert your Datavyu codes to a time series
+cts.proc_codes_file(codes_file='mycodes.csv', video_file='video.mp4')
+```
 
 ### extract features from a video
 This example shows haw to take a video file and extract:
  * a mean luminance time series
  * RGB time series
+
+```
+import emocodes as ec
+
+# find duration of your video
+duration = ec.get_video_length('video.mp4')
+
+# create dataframe "lum" with luminance and RGB values
+lum = ec.compute_luminance('video.mp4', sampling_rate=5, duration)
+
+# save the dataframe as a csv
+lum.to_csv('luminance.csv')
+```
 
 ## Coming Soon
 * Point-and-click graphic user interface to enhance accessibility
