@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='emocodes',
     packages=['emocodes'],
-    version='0.1.0',
+    version='0.1.1',
     description='A library designed to accompany the EmoCodes system.',
     author='M. Catalina Camacho',
     license='MIT',
