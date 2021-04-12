@@ -14,6 +14,7 @@ Please check back this summer (2021) for the official release of emocodes 1.0.
    :maxdepth: 2
 
    code
+   video
 
 Other Links
 -------------

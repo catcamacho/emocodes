@@ -7,5 +7,5 @@
 codes Module
 ======================================
 
-.. automodule:: emocodes.code
+.. automodule:: emocodes.video
     :members:
