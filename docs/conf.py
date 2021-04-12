@@ -22,7 +22,7 @@ copyright = '2021, M. Catalina Camacho'
 author = 'M. Catalina Camacho; Elizabeth M. Williams'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = 'dev0.1.0'
 
 
 # -- General configuration ---------------------------------------------------
