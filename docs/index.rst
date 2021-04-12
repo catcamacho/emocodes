@@ -1,20 +1,23 @@
-.. emocodes documentation master file, created by
-   sphinx-quickstart on Mon Apr 12 08:56:56 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. image:: ../logos/circle_color.png
+   :height: 250px
+   :width: 250 px
+   :alt: emocodes logo
+   :align: right
 
-Welcome to the emocodes documentation!
+EmoCodes
 ======================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+
+   code
+
+Our documentation is currently under construction!
+Please check back this summer (2021) for the official release of emocodes 1.0.
 
 
-
-Indices and tables
-==================
+Other Links
+-------------
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
