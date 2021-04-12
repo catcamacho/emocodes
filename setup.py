@@ -8,6 +8,6 @@ setup(
     author='M. Catalina Camacho',
     license='MIT',
     download_url='https://github.com/catcamacho/emocodes/',
-    install_requires=['pandas', 'numpy', 'moviepy', 'opencv-python', 'matplotlib', 'openpyxl'],
+    install_requires=['pandas', 'numpy', 'moviepy', 'opencv-python', 'matplotlib', 'openpyxl','sphinx-material'],
     python_requires='>=3.6'
 )
