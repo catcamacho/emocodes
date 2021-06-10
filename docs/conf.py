@@ -30,7 +30,7 @@ release = 'dev0.1.0'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['myst_parser', 'sphinx_rtd_theme', 'sphinx_toolbox.confval', 'sphinx.ext.autodoc',
+extensions = ['sphinx_rtd_theme', 'sphinx_toolbox.confval', 'sphinx.ext.autodoc',
               'sphinx.ext.coverage', 'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
