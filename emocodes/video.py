@@ -2,7 +2,6 @@
 import pandas as pd
 import numpy as np
 
-# TODO: add function on edginess on image
 # TODO: make video processing class
 
 
@@ -46,7 +45,7 @@ def compute_luminance(video_file, sampling_rate, video_duration):
     Return
     ------
     lum_df : DataFrame
-        The Pandas dataframe of the luminance measure, resampled according to the user input.
+        The pandas dataframe containing luminance and RGB time series at sampling_rate
     """
 
     import cv2
