@@ -9,15 +9,15 @@ import logging as emolog
 # TODO: write up documentation
 # TODO: make validator class
 
-
 class CodeTimeSeries:
     """ This class processes a Datavyu CSV. converting the codes to a time series for bio-behavioral analysis."""
     def __init__(self, interpolate_gaps=True, sampling_rate=5):
         """
-        :param self:
-        :param interpolate_gaps:
-        :param sampling_rate:
-        :return:
+
+        Parameters
+        ----------
+        interpolate_gaps
+        sampling_rate
         """
 
         today = datetime.now()
@@ -67,7 +67,9 @@ class CodeTimeSeries:
 
 class ValidateTimeSeries:
     def __init__(self):
-        #TODO: write this class
+        """
+
+        """
 
     def check_gaps(self):
 
