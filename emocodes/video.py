@@ -1,8 +1,31 @@
 # import needed libraries
 import pandas as pd
-import numpy as np
+from os.path import abspath
 
-# TODO: make video processing class
+class ExtractVideoFeatures:
+
+    def __init__(self, video_file, sampling_rate=1):
+        self.video_file = video_file
+        self.sampling_rate = sampling_rate
+        self.resampled_video = None
+        self.audio_features_df = None
+        self.visual_features_df = None
+        self.video_features_df = None
+
+    def resample_video(self):
+        return self
+
+    def extract_audio_features(self):
+        return self
+
+    def extract_visual_features(self):
+        return self
+
+    def combine_audio_visual(self):
+        return self
+
+    def save(self):
+        return self
 
 
 def get_video_length(video_file):
@@ -20,59 +43,104 @@ def get_video_length(video_file):
         The duration of the file in milliseconds
     """
     from moviepy.editor import VideoFileClip
-    
+
     clip = VideoFileClip(video_file)
-    file_duration = int(clip.duration*1000)
+    file_duration = int(clip.duration * 1000)
     return file_duration
 
 
-def extract_visual_features(video_file, sampling_rate, video_duration):
+def resample_video(video_file, sampling_rate):
     """
-    This function produces a Series of the luminance values for a video file.
 
     Parameters
     ----------
-
     video_file : str
-        the video file to be processed
-
+        file path to video to be resampled.
     sampling_rate : float
-        desired sampling rate of outputs in Hz
+        Desired sampling rate in Hz
 
-    video_duration : float
-        length of video in milliseconds
+    Returns
+    -------
+    resampled_video : pliers video object with resampled video frames
 
-    Return
-    ------
-    lum_df : DataFrame
-        The pandas dataframe containing luminance and RGB time series at sampling_rate
     """
 
-    from cv2 import VideoCapture
+    from pliers.stimuli import VideoStim
+    from pliers.filters import FrameSamplingFilter
 
-    video = VideoCapture(video_file)
-    frames_lum = []
-    rgb = []
+    video = VideoStim(video_file)
+    resamp_filter = FrameSamplingFilter(hertz=sampling_rate)
+    resampled_video = resamp_filter.transform(video)
 
-    end = False
-    while not end:
-        r, f = video.read()
-        if r == 1:
-            t = f.mean(axis=0).mean(axis=0)
-            lum = 0.299*t[0] + 0.587*t[1] + 0.114*t[2]
-            rgb.append(t)
-            frames_lum.append(lum)
-        else:
-            end = True
+    return resampled_video
 
-    fps = (len(frames_lum)*1000)/video_duration
-    a = np.arange(0, (len(frames_lum)/fps)*1000, 1000/fps)
-    b = pd.DataFrame(frames_lum, index=pd.to_datetime(a, unit='ms'), columns=['luminance'])
-    b[['R','G','B']] = rgb
-    b.index.name = 'time_ms'
-    lum_df = b.resample('{0}ms'.format(1000/sampling_rate)).mean()
 
-    return lum_df
+def extract_visual_features(video_frames):
+    """
+    This function extracts luminance, vibrance, saliency, and sharpness from the frames of a video
+    using the pliers library. If you use this function, please cite the pliers library directly:
+    https://github.com/PsychoinformaticsLab/pliers#how-to-cite
+
+    Parameters
+    ----------
+    video_frames : object
+        pliers video object with frames to analyze
+
+    Returns
+    -------
+    low_level_video_df : DataFrame
+        Pandas dataframe with a column per low-level feature (index is time).
+    """
+
+    # extract video luminance
+    from pliers.extractors import BrightnessExtractor
+
+    brightext = BrightnessExtractor()
+    brightres = brightext.transform(video_frames)
+    brightres_df = pd.DataFrame(columns=brightres[0].to_df().columns)
+    for a, ob in enumerate(brightres):
+        t = ob.to_df()
+        t['order'] = a
+        brightres_df = brightres_df.append(t)
+
+    # extract saliency
+    from pliers.extractors import SaliencyExtractor
+
+    salext = SaliencyExtractor()
+    salres = salext.transform(video_frames)
+    salres_df = pd.DataFrame(columns=salres[0].to_df().columns)
+    for a, ob in enumerate(salres):
+        t = ob.to_df()
+        t['order'] = a
+        salres_df = salres_df.append(t)
+
+    # extract sharpness
+    from pliers.extractors import SharpnessExtractor
+
+    sharpext = SharpnessExtractor()
+    sharpres = sharpext.transform(video_frames)
+    sharpres_df = pd.DataFrame(columns=sharpres[0].to_df().columns)
+    for a, ob in enumerate(sharpres):
+        t = ob.to_df()
+        t['order'] = a
+        sharpres_df = sharpres_df.append(t)
+
+    # extract vibrance
+    from pliers.extractors import VibranceExtractor
+
+    vibext = VibranceExtractor()
+    vibres = vibext.transform(video_frames)
+    vibres_df = pd.DataFrame(columns=vibres[0].to_df().columns)
+    for a, ob in enumerate(vibres):
+        t = ob.to_df()
+        t['order'] = a
+        vibres_df = vibres_df.append(t)
+
+    # combine into 1 dataframe
+    low_level_video_df = brightres_df.merge(salres_df[salres_df.columns[4:]], left_index=True, right_index=True)
+    low_level_video_df = low_level_video_df.merge(sharpres_df[sharpres_df.columns[4:]], left_index=True, right_index=True)
+    low_level_video_df = low_level_video_df.merge(vibres_df[vibres_df.columns[4:]], left_index=True, right_index=True)
+    return low_level_video_df
 
 
 def extract_audio_features(video_file, sampling_rate):
@@ -110,15 +178,30 @@ def extract_audio_features(video_file, sampling_rate):
     # combine and resample
     low_level_audio_df = pd.DataFrame()
     low_level_audio_df['time_ms'] = rmsres_df['onset'] * 1000
+    low_level_audio_df['time_ms'] = low_level_audio_df['time_ms'] - low_level_audio_df.loc[0, 'time_ms']
     low_level_audio_df['rms'] = rmsres_df['rms']
     low_level_audio_df['beats'] = 0
     for b in bteres_df['beat_track']:
-        low_level_audio_df.loc[b,'beats'] = 1
+        low_level_audio_df.loc[b, 'beats'] = 1
 
     low_level_audio_df.index = pd.to_datetime(rmsres_df['onset'], unit='s')
     low_level_audio_df = low_level_audio_df.resample('{0}ms'.format(resample_rate)).mean()
-    low_level_audio_df['beats'][low_level_audio_df['beats']>0] = 1
-    low_level_audio_df.index = range(0,low_level_audio_df.shape[0])
+    low_level_audio_df['beats'][low_level_audio_df['beats'] > 0] = 1
+    low_level_audio_df.index = range(0, low_level_audio_df.shape[0])
     low_level_audio_df.index.name = None
 
     return low_level_audio_df
+
+def plot_file_features(features_df):
+    """
+
+    Parameters
+    ----------
+    features_df
+
+    Returns
+    -------
+    fig
+
+    """
+    return fig
