@@ -3,5 +3,4 @@ numpydoc
 sphinx
 sphinx-autodoc-typehints
 sphinx-argparse
-nbsphinx
 sphinx-rtd-theme
