@@ -1,5 +1,8 @@
-codes Module
-======================================
+codes module
+====================================
 
 .. automodule:: emocodes.code
-    :members:
+   :imported-members:
+   :members:
+   :undoc-members:
+   :show-inheritance:
