@@ -3,28 +3,78 @@ import pandas as pd
 from os.path import abspath
 
 class ExtractVideoFeatures:
+    """
 
-    def __init__(self, video_file, sampling_rate=1):
-        self.video_file = video_file
+    """
+
+    def __init__(self, sampling_rate=1):
+        """
+
+        Parameters
+        ----------
+        sampling_rate : float
+            The sampling rate in Hz
+        """
+
         self.sampling_rate = sampling_rate
         self.resampled_video = None
         self.audio_features_df = None
         self.visual_features_df = None
         self.video_features_df = None
 
-    def resample_video(self):
+    def extract_features(self, video_file):
+        """
+
+        Parameters
+        ----------
+        video_file : str
+            The filepath to the video file to be processed
+
+        Returns
+        -------
+
+        """
+        self.extract_visual_features(video_file)
+        self.extract_audio_features(video_file)
         return self
 
-    def extract_audio_features(self):
+    def extract_audio_features(self, video_file):
+        """
+
+        Parameters
+        ----------
+        video_file : str
+            The filepath to the video file to be processed
+
+        Returns
+        -------
+
+        """
+        print("extracting audio features...")
+        self.audio_features_df = extract_audio_features(video_file, self.sampling_rate)
+        print("done!")
         return self
 
-    def extract_visual_features(self):
+    def extract_visual_features(self, video_file):
+        """
+
+        Parameters
+        ----------
+        video_file : str
+            The filepath to the video file to be processed
+
+        Returns
+        -------
+
+        """
+        print("extracting video features...")
+        self.resampled_video = resample_video(video_file, self.sampling_rate)
+        self.visual_features_df = extract_visual_features(self.resampled_video)
+        print("done!")
         return self
 
-    def combine_audio_visual(self):
-        return self
+    def combine_audio_visual_dfs(self, outfile_name):
 
-    def save(self):
         return self
 
 
@@ -94,52 +144,49 @@ def extract_visual_features(video_frames):
 
     # extract video luminance
     from pliers.extractors import BrightnessExtractor
-
     brightext = BrightnessExtractor()
     brightres = brightext.transform(video_frames)
     brightres_df = pd.DataFrame(columns=brightres[0].to_df().columns)
     for a, ob in enumerate(brightres):
         t = ob.to_df()
         t['order'] = a
-        brightres_df = brightres_df.append(t)
+        brightres_df = brightres_df.append(t, ignore_index=True)
 
     # extract saliency
     from pliers.extractors import SaliencyExtractor
-
     salext = SaliencyExtractor()
     salres = salext.transform(video_frames)
     salres_df = pd.DataFrame(columns=salres[0].to_df().columns)
     for a, ob in enumerate(salres):
         t = ob.to_df()
         t['order'] = a
-        salres_df = salres_df.append(t)
+        salres_df = salres_df.append(t, ignore_index=True)
 
     # extract sharpness
     from pliers.extractors import SharpnessExtractor
-
     sharpext = SharpnessExtractor()
     sharpres = sharpext.transform(video_frames)
     sharpres_df = pd.DataFrame(columns=sharpres[0].to_df().columns)
     for a, ob in enumerate(sharpres):
         t = ob.to_df()
         t['order'] = a
-        sharpres_df = sharpres_df.append(t)
+        sharpres_df = sharpres_df.append(t, ignore_index=True)
 
     # extract vibrance
     from pliers.extractors import VibranceExtractor
-
     vibext = VibranceExtractor()
     vibres = vibext.transform(video_frames)
     vibres_df = pd.DataFrame(columns=vibres[0].to_df().columns)
     for a, ob in enumerate(vibres):
         t = ob.to_df()
         t['order'] = a
-        vibres_df = vibres_df.append(t)
+        vibres_df = vibres_df.append(t, ignore_index=True)
 
     # combine into 1 dataframe
     low_level_video_df = brightres_df.merge(salres_df[salres_df.columns[4:]], left_index=True, right_index=True)
     low_level_video_df = low_level_video_df.merge(sharpres_df[sharpres_df.columns[4:]], left_index=True, right_index=True)
     low_level_video_df = low_level_video_df.merge(vibres_df[vibres_df.columns[4:]], left_index=True, right_index=True)
+    low_level_video_df['time_ms'] = low_level_video_df['onset']*1000
     return low_level_video_df
 
 
@@ -175,7 +222,7 @@ def extract_audio_features(video_file, sampling_rate):
     bteres = btext.transform(video_file)
     bteres_df = bteres.to_df()
 
-    # combine and resample
+    # combine
     low_level_audio_df = pd.DataFrame()
     low_level_audio_df['time_ms'] = rmsres_df['onset'] * 1000
     low_level_audio_df['time_ms'] = low_level_audio_df['time_ms'] - low_level_audio_df.loc[0, 'time_ms']
@@ -192,16 +239,3 @@ def extract_audio_features(video_file, sampling_rate):
 
     return low_level_audio_df
 
-def plot_file_features(features_df):
-    """
-
-    Parameters
-    ----------
-    features_df
-
-    Returns
-    -------
-    fig
-
-    """
-    return fig
