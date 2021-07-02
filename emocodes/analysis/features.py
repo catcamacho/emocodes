@@ -12,7 +12,7 @@ def pairwise_ips(ratings):
     Parameters
     ----------
     ratings: DataFrame
-        
+
 
     Returns
     -------
