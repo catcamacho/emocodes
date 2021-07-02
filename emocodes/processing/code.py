@@ -6,18 +6,18 @@ from os import mkdir
 from emocodes.video import get_video_length
 import logging as emolog
 
-# TODO: write up documentation
 # TODO: make validator class
 
 class CodeTimeSeries:
     """ This class processes a Datavyu CSV. converting the codes to a time series for bio-behavioral analysis."""
     def __init__(self, interpolate_gaps=True, sampling_rate=5):
         """
-
         Parameters
         ----------
-        interpolate_gaps
-        sampling_rate
+        interpolate_gaps : bool
+            Defaults is 'True'.  To leave gaps blank, set to False.
+        sampling_rate : float
+            Desired output sampling rate in Hz (samples per second). Default is 5 Hz.
         """
 
         today = datetime.now()
@@ -144,9 +144,8 @@ def validate_convert_timestamps(labels, codes_df, video_duration, sampling_rate,
 
     # set up dataframe object to store data
     timeseries_df = pd.DataFrame(columns=labels,
-                                 index=range(int(1000/sampling_rate),
-                                             video_duration+int(1000/sampling_rate), int(1000/sampling_rate)))
-    timeseries_df.index.name = 'time'
+                                 index=range(0, video_duration+int(1000/sampling_rate), int(1000/sampling_rate)))
+    timeseries_df.index.name = 'onset'
 
     for label in labels:
         label_df = codes_df[[label+'.onset', label+'.offset', label+'.code01']].dropna(axis=0, how='any')

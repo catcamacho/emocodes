@@ -139,7 +139,7 @@ def extract_visual_features(video_frames):
     Returns
     -------
     low_level_video_df : DataFrame
-        Pandas dataframe with a column per low-level feature (index is time).
+        Pandas dataframe with a column per low-level feature.py (index is time).
     """
 
     # extract video luminance
@@ -206,7 +206,7 @@ def extract_audio_features(video_file, sampling_rate):
     Returns
     -------
     low_level_audio_df : DataFrame
-        Pandas dataframe with a column per low-level feature (index is time).
+        Pandas dataframe with a column per low-level feature.py (index is time).
     """
     resample_rate = 1000 / sampling_rate
 
