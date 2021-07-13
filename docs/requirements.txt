@@ -4,3 +4,4 @@ sphinx
 sphinx-autodoc-typehints
 sphinx-argparse
 sphinx-rtd-theme
+sphinx-autoapi
