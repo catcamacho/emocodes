@@ -38,7 +38,6 @@ extensions = ['sphinx_rtd_theme',
               'sphinx.ext.autosummary',
               'autoapi.extension']
 
-autosummary_generate = True
 autoapi_type = 'python'
 autoapi_dirs = [os.path.abspath('../emocodes')]
 # Add any paths that contain templates here, relative to this directory.
