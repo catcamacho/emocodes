@@ -64,7 +64,7 @@ html_theme = 'sphinx_rtd_theme'
 # Set link name generated in the top bar.
 html_title = 'EmoCodes'
 github_url = 'https://github.com/catcamacho/emocodes/'
-html_logo = '../logos/circle_color.png'
+html_logo = os.path.abspath('../logos/circle_color.png')
 
 # Material theme options (see theme.conf for more information)
 html_theme_options = {
