@@ -1,8 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='emocodes',
-    packages=['emocodes'],
+    packages=find_packages(),
     version='0.1.1',
     description='A library designed to accompany the EmoCodes system.',
     author='M. Catalina Camacho',

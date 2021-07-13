@@ -140,7 +140,7 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
 
     """
     icc_df = pd.DataFrame(columns=['instance_level_ICC', 'instance_level_consistency',
-                                   'overall_mean_ICC', 'overall_consistency'])
+                                   'overall_mean_ICC'])
     for x in column_labels:
         icc = pg.intraclass_corr(data=ratings, targets=index_label, raters=rater_col_name,
                                  ratings=x, nan_policy='omit').round(3)

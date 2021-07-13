@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from os.path import isfile
-sns.set(context='Talk', style='white')
+sns.set(context='talk', style='white')
 
 
 class GraphTimeSeries:
