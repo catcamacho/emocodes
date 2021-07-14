@@ -1,6 +1,10 @@
 # import needed libraries
 import pandas as pd
-from os.path import abspath
+import librosa
+import numpy as np
+import os.path
+from subprocess import check_call
+
 
 class ExtractVideoFeatures:
     """
@@ -184,22 +188,71 @@ def extract_visual_features(video_frames):
 
     # combine into 1 dataframe
     low_level_video_df = brightres_df.merge(salres_df[salres_df.columns[4:]], left_index=True, right_index=True)
-    low_level_video_df = low_level_video_df.merge(sharpres_df[sharpres_df.columns[4:]], left_index=True, right_index=True)
+    low_level_video_df = low_level_video_df.merge(sharpres_df[sharpres_df.columns[4:]], 
+                                                  left_index=True, right_index=True)
     low_level_video_df = low_level_video_df.merge(vibres_df[vibres_df.columns[4:]], left_index=True, right_index=True)
     low_level_video_df['time_ms'] = low_level_video_df['onset']*1000
     return low_level_video_df
 
 
-def extract_audio_features(video_file, sampling_rate):
+def extract_sound_from_video(video_file):
     """
-    This function extracts audio intensity (continuous variable) and beats (categorical) from the audio of a video file using the pliers library.
+
+    Parameters
+    ----------
+    video_file : str
+        File path to the video file to be processed.
+
+    Returns
+    -------
+    audio_file : str
+        file path to the extractive video audio file.
+    """
+    from moviepy.editor import VideoFileClip
+
+    file_name, ext = os.path.splitext(video_file)
+    video = VideoFileClip(video_file)
+    audio_file = file_name + '_sound.mp3'
+    video.audio.write_audiofile(audio_file)
+    return audio_file
+
+
+def separate_voice_music(audio_file):
+    """
+
+    Parameters
+    ----------
+    audio_file : str
+        The audio file to be processed
+
+    Returns
+    -------
+    voice_file : str
+        The file path to the separated voice track from the video file
+
+    music_file : str
+        The file path to the separated music track from the video file
+
+    """
+
+    out_folder = os.path.dirname(audio_file)
+    check_call(['spleeter', 'separate', '-p', 'spleeter:2stems', '-o', out_folder, audio_file])
+    foldername = os.path.splitext(os.path.basename(audio_file))[0]
+    voice_file = out_folder + '/' + foldername + '/vocals.wav'
+    music_file = out_folder + '/' + foldername + '/accompaniment.wav'
+    return voice_file, music_file
+
+
+def extract_audio_features(in_file, sampling_rate):
+    """
+    This function extracts audio intensity, tempo, and beats from the audio of a video file using the pliers library.
     If you use this function, please cite the pliers library directly:
     https://github.com/PsychoinformaticsLab/pliers#how-to-cite
 
     Parameters
     ----------
-    video_file : str
-        file path to video file to be processed
+    in_file : str
+        file path to video or audio file to be processed
     sampling_rate : float
         the desired sampling rate in Hz for the output
 
@@ -208,24 +261,35 @@ def extract_audio_features(video_file, sampling_rate):
     low_level_audio_df : DataFrame
         Pandas dataframe with a column per low-level feature.py (index is time).
     """
+
     resample_rate = 1000 / sampling_rate
+
+    # compute tempo on a continuous basis
+    y, sr = librosa.load(in_file)
+    onset_env = librosa.onset.onset_strength(y, sr=sr)
+    time_seconds = np.arange(1, len(y)) / sr
+    dtempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sr, ac_size=1, aggregate=None)
+    n_samples = len(dtempo)
+    dtempo_samprate = time_seconds[-1] / n_samples
+    time_ms = np.arange(0, time_seconds[-1], dtempo_samprate) * 1000
+    dtempo_df = pd.DataFrame(dtempo, columns=['dynamic_tempo'], index=pd.to_datetime(time_ms, unit='ms'))
+    dtempo_df = dtempo_df.resample('{0}ms'.format(resample_rate)).mean()
 
     # audio RMS to capture changes in intensity
     from pliers.extractors import RMSExtractor
     rmsext = RMSExtractor()
-    rmsres = rmsext.transform(video_file)
+    rmsres = rmsext.transform(in_file)
     rmsres_df = rmsres.to_df()
 
     # Identify major beats in audio
     from pliers.extractors import BeatTrackExtractor
     btext = BeatTrackExtractor()
-    bteres = btext.transform(video_file)
+    bteres = btext.transform(in_file)
     bteres_df = bteres.to_df()
 
-    # combine
+    # combine features into one dataframe
     low_level_audio_df = pd.DataFrame()
     low_level_audio_df['time_ms'] = rmsres_df['onset'] * 1000
-    low_level_audio_df['time_ms'] = low_level_audio_df['time_ms'] - low_level_audio_df.loc[0, 'time_ms']
     low_level_audio_df['rms'] = rmsres_df['rms']
     low_level_audio_df['beats'] = 0
     for b in bteres_df['beat_track']:
@@ -233,9 +297,10 @@ def extract_audio_features(video_file, sampling_rate):
 
     low_level_audio_df.index = pd.to_datetime(rmsres_df['onset'], unit='s')
     low_level_audio_df = low_level_audio_df.resample('{0}ms'.format(resample_rate)).mean()
+    low_level_audio_df['onset_ms'] = low_level_audio_df['time_ms'] - low_level_audio_df['time_ms'][0]
     low_level_audio_df['beats'][low_level_audio_df['beats'] > 0] = 1
+    low_level_audio_df['dynamic_tempo'] = dtempo_df['dynamic_tempo']
     low_level_audio_df.index = range(0, low_level_audio_df.shape[0])
     low_level_audio_df.index.name = None
 
     return low_level_audio_df
-
