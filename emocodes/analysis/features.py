@@ -25,3 +25,6 @@ def pairwise_ips(ratings):
     return(mean_ips, ips_series)
 
 
+def pairwise_corr(ratings):
+
+    return(corr_mat_df, )
