@@ -9,6 +9,6 @@ setup(
     license='MIT',
     download_url='https://github.com/catcamacho/emocodes/',
     install_requires=['spleeter', 'pandas', 'numpy', 'moviepy', 'opencv-python', 'matplotlib', 'openpyxl', 'pliers', 'librosa',
-                      'python-magic-bin==0.4.14', 'seaborn', 'pingouin'],
+                      'python-magic-bin==0.4.14', 'seaborn', 'pingouin','scipy'],
     python_requires='>=3.6'
 )
