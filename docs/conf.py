@@ -69,7 +69,7 @@ html_logo = os.path.abspath('../logos/circle_color.png')
 # Material theme options (see theme.conf for more information)
 html_theme_options = {
     'style_nav_header_background': '#343131',
-    'navigation_depth': 3,
+    'navigation_depth': 4,
     'collapse_navigation': False,
     'logo_only': True,
 }

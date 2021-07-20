@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from os.path import abspath, isdir, basename
 from os import mkdir
-from emocodes.video import get_video_length
+from emocodes.processing.video import get_video_length
 import logging as emolog
 
 # TODO: make validator class
