@@ -262,7 +262,7 @@ def extract_audio_features(in_file, sampling_rate):
         Pandas dataframe with a column per low-level feature.py (index is time).
     """
 
-    resample_rate = 1000 / sampling_rate
+    resample_rate = int(1000 / sampling_rate)
 
     # compute tempo on a continuous basis
     y, sr = librosa.load(in_file)

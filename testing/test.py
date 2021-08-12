@@ -6,7 +6,7 @@ import os.path
 features = pd.read_csv('/Users/catcamacho/Box/CCP/HBN_study/HBN_video_coding/processing/low_level/movieDM_low_av_features.csv', index_col=0)
 time_col='onset'
 units='s'
-column_names=['brightness', 'frac_high_saliency', 'sharpness', 'vibrance','rms']
+column_names=['brightness', 'frac_high_saliency', 'sharpness', 'vibrance', 'rms']
 sampling_rate=1.2
 convolve_hrf = True
 

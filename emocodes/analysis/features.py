@@ -61,15 +61,15 @@ def pairwise_ips(features, column_names='all'):
         column_names = features.columns
 
     ips_series = np.ones((len(column_names), len(column_names), len(features)))
-    mean_ips_df = pd.DataFrame(columns=column_names, index=column_names)
+    mean_ips_df = pd.DataFrame(1, columns=column_names, index=column_names)
 
     # get unique pairs of column labels
     combs = itertools.combinations(column_names, 2)
     for pair in combs:
         a = pair[0]
         b = pair[1]
-        a_idx = column_names.index(a)
-        b_idx = column_names.index(b)
+        a_idx = column_names.to_list().index(a)
+        b_idx = column_names.to_list().index(b)
         aphase = np.angle(hilbert(features[a]), deg=False)
         bphase = np.angle(hilbert(features[b]), deg=False)
         phase_synchrony = 1 - np.sin(np.abs(aphase - bphase) / 2)
