@@ -2,17 +2,20 @@ import pandas as pd
 import pingouin as pg
 
 # TODO: write ICC class
+# TODO: write consensus code class
 
 
 class InterraterReliability:
     def __init__(self):
         """
-
+        This class can be used to compute metrics of interrater reliability from a list of dataframes/codes (with
+        identical column names).
         """
         self.list_of_codes = None
         self.list_of_raters = None
         self.long_codes = None
         self.iccs = None
+        self.exact = None
         self.rater_col_name = None
 
     def df_list_to_long_df(self, list_of_codes, list_of_raters=None, rater_col_name='rater'):
@@ -88,12 +91,41 @@ class InterraterReliability:
         print(self.iccs)
 
 
+class Consensus:
+    def __init__(self, threshold=0.9):
+        '''
+
+        Parameters
+        ----------
+        threshold
+
+
+        '''
+        self.codes_list = None
+        self.raters = None
+        self.original_codes = None
+        self.threshold = threshold
+        self.consensus_scores = None
+
+    def trainee_consensus(self,trainee_codes_list, trainee_list, exemplar_code_file):
+        self.codes_list = trainee_codes_list
+        self.raters = trainee_list
+        self.original_codes = exemplar_code_file
+        self.consensus_scores = compute_exact_match(ratings_list, raters_list, reference=exemplar_code_file)
+
+    def interrater_consensus(self, codes_list, trainee_list):
+        self.codes_list = codes_list
+        self.raters = trainee_list
+        self.consensus_scores = compute_exact_match(ratings_list, raters_list, reference=None)
+
+
 def compile_ratings(list_dfs, list_raters=None, rater_col_name='rater', index_label='time'):
     """
 
     Parameters
     ----------
     list_dfs : list
+        
     list_raters : list
     rater_col_name : str
     index_label : str
@@ -158,3 +190,21 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
             icc_df.loc[x, 'instance_level_consistency'] = 'excellent'
 
     return icc_df
+
+
+def compute_exact_match(ratings_list, raters_list, reference):
+    '''
+
+    Parameters
+    ----------
+    ratings_list : list
+    raters_list : list
+    reference : str
+
+    Returns
+    -------
+    extact_match_stats : DataFrame
+
+    '''
+
+    return(extact_match_stats)

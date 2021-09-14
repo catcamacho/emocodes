@@ -217,32 +217,6 @@ def extract_sound_from_video(video_file):
     return audio_file
 
 
-def separate_voice_music(audio_file):
-    """
-
-    Parameters
-    ----------
-    audio_file : str
-        The audio file to be processed
-
-    Returns
-    -------
-    voice_file : str
-        The file path to the separated voice track from the video file
-
-    music_file : str
-        The file path to the separated music track from the video file
-
-    """
-
-    out_folder = os.path.dirname(audio_file)
-    check_call(['spleeter', 'separate', '-p', 'spleeter:2stems', '-o', out_folder, audio_file])
-    foldername = os.path.splitext(os.path.basename(audio_file))[0]
-    voice_file = out_folder + '/' + foldername + '/vocals.wav'
-    music_file = out_folder + '/' + foldername + '/accompaniment.wav'
-    return voice_file, music_file
-
-
 def extract_audio_features(in_file, sampling_rate):
     """
     This function extracts audio intensity, tempo, and beats from the audio of a video file using the pliers library.

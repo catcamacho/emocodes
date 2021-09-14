@@ -107,8 +107,7 @@ def get_code_labels(codes_df):
             labels.remove(x)
     return labels
     
-    
-# validate and convert onset/offset times to a time series
+
 def validate_convert_timestamps(labels, codes_df, video_duration, sampling_rate, interpolate_gaps=True, do_log=False):
     """ This function performs two steps:
         1. Checks for human errors in coding such as incorrect end times or gaps in coding.
