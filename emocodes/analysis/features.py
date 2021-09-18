@@ -68,8 +68,8 @@ def pairwise_ips(features, column_names='all'):
     for pair in combs:
         a = pair[0]
         b = pair[1]
-        a_idx = column_names.to_list().index(a)
-        b_idx = column_names.to_list().index(b)
+        a_idx = column_names.index(a)
+        b_idx = column_names.index(b)
         aphase = np.angle(hilbert(features[a]), deg=False)
         bphase = np.angle(hilbert(features[b]), deg=False)
         phase_synchrony = 1 - np.sin(np.abs(aphase - bphase) / 2)

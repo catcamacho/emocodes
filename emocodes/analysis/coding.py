@@ -1,5 +1,6 @@
 import pandas as pd
 import pingouin as pg
+import os
 
 # TODO: write ICC class
 # TODO: write consensus code class
@@ -125,10 +126,14 @@ def compile_ratings(list_dfs, list_raters=None, rater_col_name='rater', index_la
     Parameters
     ----------
     list_dfs : list
-        
+        A list of DataFrames or CSV files containing dataframes.
     list_raters : list
+        Default is None. A list of preferred rater names. If none are passed, default is to use "raterXX"
+        (e.g., "rater01' for the first dataframe)
     rater_col_name : str
+        Default is 'rater'. Name for the column containing rater information.
     index_label : str
+        Default is 'time'.  Name of column with time index information.
 
     Returns
     -------
@@ -198,13 +203,57 @@ def compute_exact_match(ratings_list, raters_list, reference):
     Parameters
     ----------
     ratings_list : list
+        List of dataframe objects or CSV filenames of saved dataframes.
     raters_list : list
-    reference : str
+        List of raters corresponding to each ratings DataFrame in the ratings_list.
+    reference : DataFrame or filepath or None
+        The DataFrame object or CSV filename of the DataFrame object to compare each DataFrame in ratings_list to.
+        If None, this function performs a pair-wise comparison instead.
 
     Returns
     -------
     extact_match_stats : DataFrame
-
+        A DataFrame with the match statistic for each pair of raters and for each column in the codes.
     '''
 
-    return(extact_match_stats)
+    exact_match_stats = pd.DataFrame(columns=['RatingsA', 'RatingsB', 'ColumnVariable', 'PercentOverlap'])
+    if not isinstance(ratings_list[0], pd.DataFrame()):
+        if not os.isfile(ratings_list[0]):
+            raise 'ERROR: ratings_list must be list of either pandas DataFrames OR a list of pandas DataFrames saved as CSVs.'
+        else:
+            ratings_dfs = []
+            for a in ratings_list:
+                df = pd.read_csv(a, index_col=0)
+                ratings_dfs.append(df)
+    else:
+        ratings_dfs = ratings_list
+
+    if reference:
+        if not isinstance(reference, pd.DataFrame()):
+            if not os.isfile(reference):
+                raise 'ERROR: reference file must be DataFrame, filepath, or None.'
+            else:
+                reference = pd.read_csv(reference, index_col=0)
+
+        variables = reference.columns
+        for i, a in enumerate(ratings_dfs):
+            for h, b in enumerate(variables):
+                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'RatingsA'] = raters_list[i]
+                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'RatingsB'] = 'reference'
+                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'ColumnVariable'] = b
+                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'PercentOverlap'] = (a[b] == reference[b]).mean() * 100
+    else:
+        from itertools import combinations
+        variables = ratings_dfs[0].columns
+        r = range(0,len(raters_list))
+        combs = combinations(r,2)
+        for i, a in enumerate(combs):
+            for h, b in enumerate(variables):
+                df1 = ratings_list[a[0]]
+                df2 = ratings_list[a[1]]
+                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'RatingsA'] = raters_list[a[0]]
+                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'RatingsB'] = raters_list[a[1]]
+                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'ColumnVariable'] = b
+                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'PercentOverlap'] = (df1[b] == df2[b]).mean() * 100
+
+    return exact_match_stats
