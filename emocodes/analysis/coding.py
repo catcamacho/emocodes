@@ -15,38 +15,38 @@ class InterraterReliability:
         self.long_codes = None
         self.iccs = None
         self.exact = None
-        self.rater_col_name = None
+        self.rater_col_name = 'rater'
 
-    def df_list_to_long_df(self, list_of_codes, list_of_raters=None, rater_col_name='rater'):
+    def df_list_to_long_df(self, list_of_codes, list_of_raters=None):
         """
+        This method combines input dataframes in to one long, stacked dataframe, differentiating each by "rater".
+        The index is presumed to be time and is preserved.
 
         Parameters
         ----------
-        list_of_codes
-        list_of_raters
-        rater_col_name
-
-        Returns
-        -------
+        list_of_codes : list
+            list of DataFrame objects OR filepaths to CSVs containing DataFrame objects to stack.
+        list_of_raters : list
+            Optional. Custom list of rater names/identifiers. If none are entered, defaults to naming as "rater01,
+            rater02..." and so on.
 
         """
         self.list_of_codes = list_of_codes
         if not list_of_raters:
             list_of_raters = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(list_of_codes))]
         self.list_of_raters = list_of_raters
-        self.rater_col_name = rater_col_name
         self.long_codes = compile_ratings(self.list_of_codes, self.list_of_raters, self.rater_col_name)
         return self
 
     def compute_iccs(self, column_labels):
         """
+        This method computes the overall
 
         Parameters
         ----------
-        column_labels
-
-        Returns
-        -------
+        column_labels : list
+            List of string column labels to compute ICCs for. Default is "None", which computes ICCs for all columns
+            not the index/time column and "rater".
 
         """
         self.iccs = interrater_iccs(self.long_codes, self.rater_col_name, column_labels)
@@ -54,19 +54,18 @@ class InterraterReliability:
 
     def save_iccs(self, out_file_name):
         """
+        This function saves the ICC results table to a CSV.
 
         Parameters
         ----------
-        out_file_name
-
-        Returns
-        -------
+        out_file_name : str
+            File path and file name to save the ICC results table.
 
         """
         self.iccs.to_csv(out_file_name + '.csv')
         print('ICCs saved at {0}.csv'.format(out_file_name))
 
-    def compute_compile_iccs(self, list_of_codes, list_of_raters=None, column_labels=None, rater_col_name='rater',
+    def compute_compile_iccs(self, list_of_codes, list_of_raters=None, column_labels=None,
                              out_file_name='interrater_iccs'):
         """
 
@@ -83,8 +82,9 @@ class InterraterReliability:
 
         """
         self.list_of_codes = list_of_codes
+        if not list_of_raters:
+            list_of_raters = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(list_of_codes))]
         self.list_of_raters = list_of_raters
-        self.rater_col_name = rater_col_name
         self.df_list_to_long_df(self, self.list_of_codes, list_of_raters=self.list_of_raters,
                                 rater_col_name=self.rater_col_name)
         self.compute_iccs(self, column_labels)
@@ -96,9 +96,6 @@ class Consensus:
     def __init__(self):
         """
 
-        Parameters
-        ----------
-        threshold
         """
         self.codes_list = None
         self.raters = None
@@ -154,10 +151,10 @@ class Consensus:
         r = range(0, len(self.raters))
         combs = combinations(r, 2)
         results = []
-        for i, df in enumerate(combs):
-            res = mismatch_segments_list(self.codes_list[combs[0]], self.codes_list[combs[1]])
-            res['rater1'] = self.raters[combs[0]]
-            res['rater2'] = self.raters[combs[1]]
+        for c in combs:
+            res = mismatch_segments_list(self.codes_list[c[0]], self.codes_list[c[1]])
+            res['rater1'] = self.raters[c[0]]
+            res['rater2'] = self.raters[c[1]]
             results.append(res)
 
         self.mismatch_segments = pd.concat(results)
@@ -225,8 +222,14 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
         The dataframe object containing instance-level and overall intraclass correlation values.
 
     """
+    if not column_labels:
+        column_labels = ratings.columns
+        column_labels.drop(rater_col_name)
+        column_labels.drop(index_label)
+
     icc_df = pd.DataFrame(columns=['instance_level_ICC', 'instance_level_consistency',
                                    'overall_mean_ICC'])
+
     for x in column_labels:
         icc = pg.intraclass_corr(data=ratings, targets=index_label, raters=rater_col_name,
                                  ratings=x, nan_policy='omit').round(3)
