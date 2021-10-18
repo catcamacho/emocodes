@@ -1,6 +1,7 @@
 import pandas as pd
 import pingouin as pg
 import os
+from itertools import combinations
 
 
 class InterraterReliability:
@@ -30,6 +31,8 @@ class InterraterReliability:
 
         """
         self.list_of_codes = list_of_codes
+        if not list_of_raters:
+            list_of_raters = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(list_of_codes))]
         self.list_of_raters = list_of_raters
         self.rater_col_name = rater_col_name
         self.long_codes = compile_ratings(self.list_of_codes, self.list_of_raters, self.rater_col_name)
@@ -61,7 +64,7 @@ class InterraterReliability:
 
         """
         self.iccs.to_csv(out_file_name + '.csv')
-        print('ICCs saved at {0}.csv')
+        print('ICCs saved at {0}.csv'.format(out_file_name))
 
     def compute_compile_iccs(self, list_of_codes, list_of_raters=None, column_labels=None, rater_col_name='rater',
                              out_file_name='interrater_iccs'):
@@ -90,34 +93,78 @@ class InterraterReliability:
 
 
 class Consensus:
-    def __init__(self, threshold=0.9):
-        '''
+    def __init__(self):
+        """
 
         Parameters
         ----------
         threshold
-
-
-        '''
+        """
         self.codes_list = None
         self.raters = None
         self.original_codes = None
-        self.threshold = threshold
         self.consensus_scores = None
+        self.mismatch_segments = None
 
-    def training_consensus(self,trainee_codes_list, exemplar_code_file, trainee_list=None):
+    def training_consensus(self, trainee_codes_list, exemplar_code_file, trainee_list):
+        """
+
+        Parameters
+        ----------
+        trainee_codes_list
+        exemplar_code_file
+        trainee_list
+
+        Returns
+        -------
+
+        """
         self.codes_list = trainee_codes_list
+        if not trainee_list:
+            trainee_list = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(codes_list))]
+
         self.raters = trainee_list
         self.original_codes = exemplar_code_file
-        self.consensus_scores = compute_exact_match(self.codes_list, self.raters, reference=exemplar_code_file)
+        self.consensus_scores = compute_exact_match(self.codes_list, self.raters, reference=self.original_codes)
+        results = []
+        for i, df in enumerate(self.codes_list):
+            res = mismatch_segments_list(df, self.original_codes, time_column=0)
+            res['rater'] = self.raters[i]
+            results.append(res)
+
+        self.mismatch_segments = pd.concat(results)
+        return self
 
     def interrater_consensus(self, codes_list, trainee_list=None):
+        """
+
+        Parameters
+        ----------
+        codes_list
+        trainee_list
+
+        """
         self.codes_list = codes_list
+        if not trainee_list:
+            trainee_list = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(codes_list))]
+
         self.raters = trainee_list
         self.consensus_scores = compute_exact_match(self.codes_list, self.raters, reference=None)
 
+        r = range(0, len(self.raters))
+        combs = combinations(r, 2)
+        results = []
+        for i, df in enumerate(combs):
+            res = mismatch_segments_list(self.codes_list[combs[0]], self.codes_list[combs[1]])
+            res['rater1'] = self.raters[combs[0]]
+            res['rater2'] = self.raters[combs[1]]
+            results.append(res)
 
-def compile_ratings(list_dfs, list_raters=None, rater_col_name='rater', index_label='time'):
+        self.mismatch_segments = pd.concat(results)
+        return self
+
+
+def compile_ratings(list_dfs, list_raters=None):
     """
 
     Parameters
@@ -127,27 +174,32 @@ def compile_ratings(list_dfs, list_raters=None, rater_col_name='rater', index_la
     list_raters : list
         Default is None. A list of preferred rater names. If none are passed, default is to use "raterXX"
         (e.g., "rater01' for the first dataframe)
-    rater_col_name : str
-        Default is 'rater'. Name for the column containing rater information.
-    index_label : str
-        Default is 'time'.  Name of column with time index information.
 
     Returns
     -------
     single_df : DataFrame
     """
 
-    dfs = []
-    for i, file in enumerate(list_dfs):
+    ratings_dfs = []
+    for i, df in enumerate(list_dfs):
         if list_raters:
             rater = list_raters[i]
         else:
             rater = 'rater{0}'.format(i.astype(str).zfill(2))
-        temp = pd.load_csv(file, index_col=index_label)
-        temp[rater_col_name] = rater
-        dfs.append(temp)
 
-    single_df = pd.concat(dfs)
+        if not isinstance(df, pd.DataFrame):
+            if not os.path.isfile(df):
+                raise 'ERROR: ratings_list must be list of either pandas DataFrames OR a list of pandas DataFrames ' \
+                      'saved as CSVs. '
+            else:
+                df = pd.read_csv(df, index_col=0)
+                df['rater'] = rater
+                ratings_dfs.append(df)
+        else:
+            df['rater'] = rater
+            ratings_dfs.append(df)
+
+    single_df = pd.concat(ratings_dfs)
 
     return single_df
 
@@ -195,7 +247,7 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
 
 
 def compute_exact_match(ratings_list, raters_list, reference):
-    '''
+    """
 
     Parameters
     ----------
@@ -209,9 +261,9 @@ def compute_exact_match(ratings_list, raters_list, reference):
 
     Returns
     -------
-    extact_match_stats : DataFrame
+    exact_match_stats : DataFrame
         A DataFrame with the match statistic for each pair of raters and for each column in the codes.
-    '''
+    """
 
     exact_match_stats = pd.DataFrame(columns=['RatingsA', 'RatingsB', 'ColumnVariable', 'PercentOverlap'])
     if not isinstance(ratings_list[0], pd.DataFrame):
@@ -232,7 +284,6 @@ def compute_exact_match(ratings_list, raters_list, reference):
             else:
                 reference = pd.read_csv(reference, index_col=0)
 
-        variables = reference.columns
         for i, a in enumerate(ratings_dfs):
             variables = a.columns
             for h, b in enumerate(variables):
@@ -241,9 +292,8 @@ def compute_exact_match(ratings_list, raters_list, reference):
                 exact_match_stats.loc['{0}_{1}'.format(i, h), 'ColumnVariable'] = b
                 exact_match_stats.loc['{0}_{1}'.format(i, h), 'PercentOverlap'] = (a[b] == reference[b]).mean() * 100
     else:
-        from itertools import combinations
         variables = ratings_dfs[0].columns
-        r = range(0,len(raters_list))
+        r = range(0, len(raters_list))
         combs = combinations(r,2)
         for i, a in enumerate(combs):
             for h, b in enumerate(variables):
@@ -255,10 +305,12 @@ def compute_exact_match(ratings_list, raters_list, reference):
                 exact_match_stats.loc['{0}_{1}'.format(i, h), 'PercentOverlap'] = (df1[b] == df2[b]).mean() * 100
     return exact_match_stats
 
+
 def mismatch_segments_list(df1, df2, time_column=0):
     """
     This function compares two columns of the same name across two input dataframes and returns a dataframe of segments
-    that are nonmatching.  Units are of whatever the index or time variable is.
+    that are nonmatching.  Units are of whatever the index or time variable is. Note that this function only checks
+    columns that exist in BOTH dataframes.
 
     Parameters
     ----------
@@ -287,18 +339,24 @@ def mismatch_segments_list(df1, df2, time_column=0):
         else:
             df2 = pd.read_csv(df2, index_col=time_column)
 
-    nonmatching_segments = pd.DataFrame(columns=['variable','mismatch_onset','mismatch_offset'])
+    nonmatching_segments = pd.DataFrame(columns=['variable', 'mismatch_onset', 'mismatch_offset'])
+
     # column by column, return onsets and offsets for non-matching segments
     variables = list(set(df1.columns) & set(df2.columns))
-    gap = df1.index[1] - df1.index[0]
-    i = 0
+
     for j, v in enumerate(variables):
-        mismatch = df1.index[df1[v] != df2[v]]
-        for k, a in enumerate(mismatch):
-            # find onsets
-            if k==0:
-                onset = k
-            while mismatch[k+1] - mismatch[k] == gap:
-                pass
+        mismatch = (df1[v] != df2[v]).astype(int)
+        mismatch = mismatch.to_frame()
+        mismatch['time'] = mismatch.index
+        mismatch['segment'] = (mismatch[v].diff(1) != 0).astype(int).cumsum()
+        res = pd.DataFrame({'start': mismatch.groupby('segment').time.first(),
+                            'end': mismatch.groupby('segment').time.last(),
+                            'value': mismatch.groupby('segment')[v].mean()}).reset_index(drop=True)
+        mismatch = res.loc[res['value'] == 1, :]
+
+        for i, e in enumerate(mismatch.index):
+            nonmatching_segments.loc['{0}_{1}'.format(j, i), 'variable'] = v
+            nonmatching_segments.loc['{0}_{1}'.format(j, i), 'mismatch_onset'] = mismatch.loc[e, 'start']
+            nonmatching_segments.loc['{0}_{1}'.format(j, i), 'mismatch_offset'] = mismatch.loc[e, 'end']
 
     return nonmatching_segments
