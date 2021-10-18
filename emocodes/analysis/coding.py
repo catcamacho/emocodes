@@ -68,17 +68,21 @@ class InterraterReliability:
     def compute_compile_iccs(self, list_of_codes, list_of_raters=None, column_labels=None,
                              out_file_name='interrater_iccs'):
         """
+        This method takes a list of dataframes and computes the interrater reliability for each column.
 
         Parameters
         ----------
-        list_of_codes
-        list_of_raters
-        column_labels
-        out_file_name
-        rater_col_name
-
-        Returns
-        -------
+        list_of_codes : list
+            A list of codes to compute the ICCs of.  List can be of DataFrame objects or of filepaths to CSVs containing
+            DataFrame objects.
+        list_of_raters : list
+            A list of strings to label the individual raters for the codes in the list_of_codes. If None, this function
+            creates a list of ['rater01','rater02',..] and so on.
+        column_labels : list OR None
+            The columns to compute ICCs for.  If None, will compute ICCs for all columns except for the 'time' and
+            'rater' columns.
+        out_file_name : str
+            The filepath and file name to save the ICC results table as.
 
         """
         self.list_of_codes = list_of_codes
@@ -95,7 +99,19 @@ class InterraterReliability:
 class Consensus:
     def __init__(self):
         """
+        This class can be used to compute the consensus (percent overlap) between two or more sets of codes.
 
+        #### Use Case 1: compute overlap between trainee codes and exemplar codes
+        >>> con = Consensus()
+        >>> con.training_consensus([trainee1_codes_df, trainee2_codes_df], original_codes_df, ['Lizzi','Cat'])
+        >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
+        >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
+
+        #### Use Case 2: compute overlap pairwise between 2 or more raters
+        >>> con = Consensus()
+        >>> con.interrater_consensus([Lizzi_codes_df, Cat_codes_df], ['Lizzi','Cat'])
+        >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
+        >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
         """
         self.codes_list = None
         self.raters = None
@@ -103,7 +119,7 @@ class Consensus:
         self.consensus_scores = None
         self.mismatch_segments = None
 
-    def training_consensus(self, trainee_codes_list, exemplar_code_file, trainee_list):
+    def training_consensus(self, trainee_codes_list, exemplar_code_file, trainee_list=None):
         """
 
         Parameters
@@ -118,7 +134,7 @@ class Consensus:
         """
         self.codes_list = trainee_codes_list
         if not trainee_list:
-            trainee_list = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(codes_list))]
+            trainee_list = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(trainee_codes_list))]
 
         self.raters = trainee_list
         self.original_codes = exemplar_code_file
@@ -132,7 +148,7 @@ class Consensus:
         self.mismatch_segments = pd.concat(results)
         return self
 
-    def interrater_consensus(self, codes_list, trainee_list=None):
+    def interrater_consensus(self, codes_list, rater_list=None):
         """
 
         Parameters
@@ -142,10 +158,10 @@ class Consensus:
 
         """
         self.codes_list = codes_list
-        if not trainee_list:
-            trainee_list = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(codes_list))]
+        if not rater_list:
+            rater_list = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(codes_list))]
 
-        self.raters = trainee_list
+        self.raters = rater_list
         self.consensus_scores = compute_exact_match(self.codes_list, self.raters, reference=None)
 
         r = range(0, len(self.raters))
@@ -163,6 +179,7 @@ class Consensus:
 
 def compile_ratings(list_dfs, list_raters=None):
     """
+    This function takes a list of dataframes (one per rater) and stacks them, preserving the time index.
 
     Parameters
     ----------
@@ -203,6 +220,9 @@ def compile_ratings(list_dfs, list_raters=None):
 
 def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_labels=None):
     """
+    This function computes the interrater ICCs using the Pingouin library. By default it computes the absolute agreement
+    between raters assuming a random sample of raters at each target (each rating at each instance).
+    Read more on ICC2 at https://pingouin-stats.org/generated/pingouin.intraclass_corr.html#pingouin.intraclass_corr
 
     Parameters
     ----------
@@ -227,14 +247,12 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
         column_labels.drop(rater_col_name)
         column_labels.drop(index_label)
 
-    icc_df = pd.DataFrame(columns=['instance_level_ICC', 'instance_level_consistency',
-                                   'overall_mean_ICC'])
+    icc_df = pd.DataFrame(columns=['instance_level_ICC', 'instance_level_consistency'])
 
     for x in column_labels:
         icc = pg.intraclass_corr(data=ratings, targets=index_label, raters=rater_col_name,
                                  ratings=x, nan_policy='omit').round(3)
         icc_df.loc[x, 'instance_level_ICC'] = icc.loc[1, 'ICC']
-        icc_df.loc[x, 'overall_mean_ICC'] = icc.loc[4, 'ICC']
 
         # evaluate item-level ICCs
         if icc.loc[1, 'ICC'] < 0.50:
@@ -251,6 +269,8 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
 
 def compute_exact_match(ratings_list, raters_list, reference):
     """
+    This function computes the percent overlap between ratings. It can be run with a reference file that all code files
+    are compared against, or it can be run without a reference in which case all codes will be compared pair-wise.
 
     Parameters
     ----------
@@ -326,7 +346,9 @@ def mismatch_segments_list(df1, df2, time_column=0):
 
     Returns
     -------
-    nonmatching_segments
+    nonmatching_segments : DataFrame
+        A table listing all the segments during which the code in question is not in agreement between the two sets of
+        ratings.  Time is in the same units/notation as the index.
 
     """
 
