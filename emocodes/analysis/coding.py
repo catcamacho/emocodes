@@ -2,9 +2,6 @@ import pandas as pd
 import pingouin as pg
 import os
 
-# TODO: write ICC class
-# TODO: write consensus code class
-
 
 class InterraterReliability:
     def __init__(self):
@@ -108,16 +105,16 @@ class Consensus:
         self.threshold = threshold
         self.consensus_scores = None
 
-    def trainee_consensus(self,trainee_codes_list, trainee_list, exemplar_code_file):
+    def training_consensus(self,trainee_codes_list, exemplar_code_file, trainee_list=None):
         self.codes_list = trainee_codes_list
         self.raters = trainee_list
         self.original_codes = exemplar_code_file
-        self.consensus_scores = compute_exact_match(ratings_list, raters_list, reference=exemplar_code_file)
+        self.consensus_scores = compute_exact_match(self.codes_list, self.raters, reference=exemplar_code_file)
 
-    def interrater_consensus(self, codes_list, trainee_list):
+    def interrater_consensus(self, codes_list, trainee_list=None):
         self.codes_list = codes_list
         self.raters = trainee_list
-        self.consensus_scores = compute_exact_match(ratings_list, raters_list, reference=None)
+        self.consensus_scores = compute_exact_match(self.codes_list, self.raters, reference=None)
 
 
 def compile_ratings(list_dfs, list_raters=None, rater_col_name='rater', index_label='time'):
@@ -217,8 +214,8 @@ def compute_exact_match(ratings_list, raters_list, reference):
     '''
 
     exact_match_stats = pd.DataFrame(columns=['RatingsA', 'RatingsB', 'ColumnVariable', 'PercentOverlap'])
-    if not isinstance(ratings_list[0], pd.DataFrame()):
-        if not os.isfile(ratings_list[0]):
+    if not isinstance(ratings_list[0], pd.DataFrame):
+        if not os.path.isfile(ratings_list[0]):
             raise 'ERROR: ratings_list must be list of either pandas DataFrames OR a list of pandas DataFrames saved as CSVs.'
         else:
             ratings_dfs = []
@@ -229,19 +226,20 @@ def compute_exact_match(ratings_list, raters_list, reference):
         ratings_dfs = ratings_list
 
     if reference:
-        if not isinstance(reference, pd.DataFrame()):
-            if not os.isfile(reference):
+        if not isinstance(reference, pd.DataFrame):
+            if not os.path.isfile(reference):
                 raise 'ERROR: reference file must be DataFrame, filepath, or None.'
             else:
                 reference = pd.read_csv(reference, index_col=0)
 
         variables = reference.columns
         for i, a in enumerate(ratings_dfs):
+            variables = a.columns
             for h, b in enumerate(variables):
-                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'RatingsA'] = raters_list[i]
-                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'RatingsB'] = 'reference'
-                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'ColumnVariable'] = b
-                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'PercentOverlap'] = (a[b] == reference[b]).mean() * 100
+                exact_match_stats.loc['{0}_{1}'.format(i, h), 'RatingsA'] = raters_list[i]
+                exact_match_stats.loc['{0}_{1}'.format(i, h), 'RatingsB'] = 'reference'
+                exact_match_stats.loc['{0}_{1}'.format(i, h), 'ColumnVariable'] = b
+                exact_match_stats.loc['{0}_{1}'.format(i, h), 'PercentOverlap'] = (a[b] == reference[b]).mean() * 100
     else:
         from itertools import combinations
         variables = ratings_dfs[0].columns
@@ -251,9 +249,56 @@ def compute_exact_match(ratings_list, raters_list, reference):
             for h, b in enumerate(variables):
                 df1 = ratings_list[a[0]]
                 df2 = ratings_list[a[1]]
-                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'RatingsA'] = raters_list[a[0]]
-                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'RatingsB'] = raters_list[a[1]]
-                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'ColumnVariable'] = b
-                exact_match_stats.loc['{0}_{1}'.loc(i, h), 'PercentOverlap'] = (df1[b] == df2[b]).mean() * 100
-
+                exact_match_stats.loc['{0}_{1}'.format(i, h), 'RatingsA'] = raters_list[a[0]]
+                exact_match_stats.loc['{0}_{1}'.format(i, h), 'RatingsB'] = raters_list[a[1]]
+                exact_match_stats.loc['{0}_{1}'.format(i, h), 'ColumnVariable'] = b
+                exact_match_stats.loc['{0}_{1}'.format(i, h), 'PercentOverlap'] = (df1[b] == df2[b]).mean() * 100
     return exact_match_stats
+
+def mismatch_segments_list(df1, df2, time_column=0):
+    """
+    This function compares two columns of the same name across two input dataframes and returns a dataframe of segments
+    that are nonmatching.  Units are of whatever the index or time variable is.
+
+    Parameters
+    ----------
+    df1 : DataFrame object OR filepath
+        The dataframe to compare to df2. Index must be the time or count variable.
+    df2 : DataFrame object OR filepath
+        The dataframe to compare to df1.  Index must be time or count variable
+    time_column : str OR int
+        name or index of column to use as the time variable. Default is 0 (first column)
+
+    Returns
+    -------
+    nonmatching_segments
+
+    """
+
+    if not isinstance(df1, pd.DataFrame):
+        if not os.path.isfile(df1):
+            raise 'ERROR: df1 must be list of either pandas DataFrames OR a list of pandas DataFrames saved as CSVs.'
+        else:
+            df1 = pd.read_csv(df1, index_col=time_column)
+
+    if not isinstance(df2, pd.DataFrame):
+        if not os.path.isfile(df2):
+            raise 'ERROR: df2 must be list of either pandas DataFrames OR a list of pandas DataFrames saved as CSVs.'
+        else:
+            df2 = pd.read_csv(df2, index_col=time_column)
+
+    nonmatching_segments = pd.DataFrame(columns=['variable','mismatch_onset','mismatch_offset'])
+    # column by column, return onsets and offsets for non-matching segments
+    variables = list(set(df1.columns) & set(df2.columns))
+    gap = df1.index[1] - df1.index[0]
+    i = 0
+    for j, v in enumerate(variables):
+        mismatch = df1.index[df1[v] != df2[v]]
+        for k, a in enumerate(mismatch):
+            # find onsets
+            if k==0:
+                onset = k
+            while mismatch[k+1] - mismatch[k] == gap:
+                pass
+
+    return nonmatching_segments
