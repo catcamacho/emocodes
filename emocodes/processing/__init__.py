@@ -1,8 +1,8 @@
-from .code import (CodeTimeSeries,
-                   ValidateTimeSeries,
-                   get_code_labels,
-                   validate_convert_timestamps,
-                   save_timeseries)
+from .codes import (CodeTimeSeries,
+                    ValidateTimeSeries,
+                    get_code_labels,
+                    validate_convert_timestamps,
+                    save_timeseries)
 from .video import (ExtractVideoFeatures,
                     get_video_length,
                     resample_video,

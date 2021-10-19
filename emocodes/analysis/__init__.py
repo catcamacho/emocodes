@@ -1,2 +1,2 @@
-from .coding import *
+from .codes import *
 from .features import *

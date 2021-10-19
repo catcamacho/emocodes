@@ -1,44 +1,149 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import itertools
 from sklearn.preprocessing import MinMaxScaler
+import os
+from emocodes.plotting import plot_heatmap, plot_vif, make_num_plot
+import markdown
+import weasyprint as wp
 
-class CreateVideoFeatureSummary:
-    """
-    This class produces a summary of video features to help users judge the suitability of each feature for regression
-    analysis.
-    """
+class SummarizeVideoFeatures:
     def __init__(self):
+        """
+        This class produces a summary of video features to help users judge the suitability of each feature for regression
+        analysis.
+        """
         self.features = None
+        self.features_file = None
         self.sampling_rate = None
         self.units = None
         self.time_col = None
         self.columns_names = None
         self.convolve_hrf_first = None
+        self.vif_scores = None
+        self.vif_plot = None
+        self.ips_scores = None
+        self.ips_plot = None
+        self.corr_scores = None
+        self.corr_plot = None
+        self.power_spectra = None
+        self.power_plot = None
+        self.feature_plot = None
+        self.hrf_feature_plots = None
+        self.fig_dir = None
 
-    def summarize(self, features, convolve_hrf=True, column_names='all', sampling_rate=10, units='s', time_col='index'):
-        self.features = features
+    def compile(self, features, out_dir, convolve_hrf=True, column_names='all', sampling_rate=10, units='s',
+                time_col='index'):
+        """
+        This function runs the methods to create a features report.
+        Parameters
+        ----------
+        features : filepath
+            A CSV containing a dataframe object with timeseries data for each feature you want to include in the report
+        out_dir : filepath
+            The full or relative path to the folder where you want the report saved to.
+        convolve_hrf : bool
+            Setting to convolve each feature with a double-gamma hemodynamic response function (HRF) before creating the
+             report
+        column_names : list
+            The columns to include in the feature analysis
+        sampling_rate : float
+            Sampling rate in Hz (samples per second) of the input data
+        units : str
+            Must be 's', 'ms', 'm', or 'h' indicating seconds, milliseconds, minutes, or hours respectively. The units
+            that the time variable (index) is in.
+        time_col : str
+            The name of the column to use as time if not the index.
+
+        """
+        self.features_file = features
+        self.time_col = time_col
+        if time_col == 'index':
+            self.features = pd.read_csv(features, index_col=0)
+        else:
+            self.features = pd.read_csv(features, index_col=self.time_col)
         self.sampling_rate = sampling_rate
         self.units = units
-        self.time_col = time_col
+
         self.column_names = column_names
         self.convolve_hrf_first = convolve_hrf
+        self.fig_dir = os.path.join(out_dir, 'figs')
+        os.makedirs(self.fig_dir, exist_ok=True)
 
         if convolve_hrf:
-            self.hrf_conv_features = hrf_convolve_features(features, column_names=self.column_names,
+            self.hrf_conv_features = hrf_convolve_features(self.features, column_names=self.column_names,
                                                            time_col=self.time_col)
+        else:
+            self.hrf_conv_features = self.features
+        self.compute_plot_corr()
+        self.compute_plot_ips()
+        self.compute_plot_vif()
+        self.compute_plot_power()
+        self.plot_features()
 
+        # set filenames for each report output type
+        reportmd = os.path.join(out_dir, 'report.md')
+        reporthtml = os.path.join(out_dir, 'report.html')
+        reportpdf = os.path.join(out_dir, 'report.pdf')
+
+        # write markdown file
+        with open(reportmd, 'w') as f:
+            f.write('# EmoCodes Analysis Summary Report\n')
+            f.write('in_file: {0} \n'.format(self.features_file))
+            f.write('---\n')
+            f.write('## Features Included in this Analysis\n')
+            f.write()
+        return self
+
+    def compute_plot_corr(self):
+        self.corr_scores = pairwise_corr(self.hrf_conv_features, column_names=self.column_names, nan_policy='omit')
+        f = plot_heatmap(self.corr_scores)
+        plt.savefig(f, os.join(self.fig_dir, 'corr_plot.svg'))
+        self.corr_plot = os.join(self.fig_dir, 'corr_plot.svg')
+        return self
+
+    def compute_plot_ips(self):
         ips_df, ips = pairwise_ips(self.hrf_conv_features, column_names=self.column_names)
-        corrmat_df = pairwise_corr(self.hrf_conv_features, column_names=self.column_names, nan_policy='omit')
-        vif = vif_collineary(self.hrf_conv_features, column_names=self.column_names)
-        power = feature_freq_power(self.hrf_conv_features, time_col=self.time_col, units=self.units,
-                                   column_names=self.column_names, sampling_rate=self.sampling_rate)
+        self.ips_scores = ips_df
+        f = plot_heatmap(ips_df)
+        plt.savefig(f, os.join(self.fig_dir, 'mean_ips_plot.svg'))
+        self.ips_plot = os.join(self.fig_dir, 'mean_ips_plot.svg')
+        return self
 
+    def compute_plot_vif(self):
+        self.vif_scores = vif_collinear(self.hrf_conv_features, column_names=self.column_names)
+        f = plot_vif(self.vif_scores)
+        plt.savefig(f, os.join(self.fig_dir, 'vif_plot.svg'))
+        self.vif_plot = os.join(self.fig_dir, 'vif_plot.svg')
+        return self
+
+    def compute_plot_power(self):
+        self.power_spectra = feature_freq_power(self.hrf_conv_features, time_col=self.time_col, units=self.units,
+                                                column_names=self.column_names, sampling_rate=self.sampling_rate)
+        f = make_num_plot(self.power_spectra)
+        plt.savefig(f, os.join(self.fig_dir, 'power_plot.svg'))
+        self.power_plot = os.join(self.fig_dir, 'power_plot.svg')
+
+        return self
+
+    def plot_features(self):
+        if self.convolve_hrf_first:
+            f = make_num_plot(self.hrf_conv_features)
+            plt.savefig(f, os.join(self.fig_dir, 'hrf_features_plot.svg'))
+            self.hrf_feature_plots = os.join(self.fig_dir, 'hrf_features_plot.svg')
+
+        f = make_num_plot(self.features)
+        plt.savefig(f, os.join(self.fig_dir, 'features_plot.svg'))
+        self.feature_plot = os.join(self.fig_dir, 'features_plot.svg')
+        return self
 
 
 def pairwise_ips(features, column_names='all'):
     """
-
+    This function computes the pair-wise instantaneous phase synchrony (IPS) between columns in a dataframe.  It returns
+    both the mean IPS in a NxN matrix as well as a numpy array that is size NxNxT containing the pair-wise IPS at each
+    timepoint.
     Parameters
     ----------
     features: DataFrame
@@ -82,7 +187,7 @@ def pairwise_ips(features, column_names='all'):
 
 def pairwise_corr(features, column_names='all', nan_policy='omit'):
     """
-
+    Computes the pair-wise Spearman correlation coefficient for a set of features.
     Parameters
     ----------
     features: DataFrame
@@ -114,9 +219,10 @@ def pairwise_corr(features, column_names='all', nan_policy='omit'):
     return corr_mat_df
 
 
-def vif_collineary(features, column_names='all'):
+def vif_collinear(features, column_names='all'):
     """
-
+    Wraps the pliers variance inflation factor command. Computes the variance inflation factor for the specified
+    columns in a set of features.
     Parameters
     ----------
     features: DataFrame
@@ -126,10 +232,10 @@ def vif_collineary(features, column_names='all'):
 
     Returns
     -------
-
+    vif_scores : Series
+        Pandas Series obect containing the VIF scores for each column in column_names.
     """
     from pliers.diagnostics import variance_inflation_factors
-    import matplotlib.pyplot as plt
 
     if column_names != 'all':
         try:
@@ -171,9 +277,9 @@ def feature_freq_power(features, time_col='index', units='s', column_names='all'
             features.index = range(0, len(features))
             features.index.name = None
             time_col = 'time_orig_index'
-        if units == 'M' or units == 'minutes':
+        if units == 'm' or units == 'minutes':
             features[time_col] = features[time_col] * 60
-        if units == 'H' or units == 'hours':
+        if units == 'm' or units == 'hours':
             features[time_col] = features[time_col] * 3600
         if units == 'ms' or units == 'milliseconds':
             features[time_col] = features[time_col] / 1000
