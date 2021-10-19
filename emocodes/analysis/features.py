@@ -90,10 +90,40 @@ class SummarizeVideoFeatures:
         # write markdown file
         with open(reportmd, 'w') as f:
             f.write('# EmoCodes Analysis Summary Report\n')
-            f.write('in_file: {0} \n'.format(self.features_file))
+            f.write('**in_file:** {0} \n'.format(self.features_file))
             f.write('---\n')
-            f.write('## Features Included in this Analysis\n')
-            f.write()
+            if self.convolve_hrf_first:
+                f.write('## Features Included in this Analysis\n')
+                f.write('### Original Features\n')
+                f.write('![feature plots]({0})/n'.format(self.feature_plot))
+                f.write('### After HRF convolution (6s peak, 12s undershoot)\n')
+                f.write('![hrf-convolved feature plots]({0})/n'.format(self.hrf_feature_plots))
+            else:
+                f.write('## Features Included in this Analysis\n')
+                f.write('![feature plots]({0})\n'.format(self.feature_plot))
+            f.write('---\n')
+            f.write('## Spearman Correlations\n')
+            f.write('![correlation plots]({0})\n'.format(self.corr_plot))
+            f.write('---\n')
+            f.write('## Mean Instantaneous Phase Synchrony\n')
+            f.write('![mean IPS plots]({0})\n'.format(self.ips_plot))
+            f.write('---\n')
+            f.write('## Variance Inflation Factors\n')
+            f.write('![VIF plots]({0})\n'.format(self.vif_plot))
+            f.write('---\n')
+            f.write('## Power Spectra\n')
+            f.write('![power plots]({0})\n'.format(self.power_plot))
+            f.write('---\n')
+        f.close()
+        # convert the markdown to HTML
+        with open('Picnic.md', 'r') as f:
+            text = f.read()
+            html = markdown.markdown(text)
+        with open(reporthtml, 'w') as f:
+            f.write(html)
+        # convert the HTML to PDF
+        wp.HTML(reporthtml).write_pdf(reportpdf)
+
         return self
 
     def compute_plot_corr(self):
@@ -143,7 +173,7 @@ def pairwise_ips(features, column_names='all'):
     """
     This function computes the pair-wise instantaneous phase synchrony (IPS) between columns in a dataframe.  It returns
     both the mean IPS in a NxN matrix as well as a numpy array that is size NxNxT containing the pair-wise IPS at each
-    timepoint.
+    time point.
     Parameters
     ----------
     features: DataFrame
@@ -250,6 +280,7 @@ def vif_collinear(features, column_names='all'):
 
 def feature_freq_power(features, time_col='index', units='s', column_names='all', sampling_rate=10):
     """
+    This function computes the power spectra for each feature.
 
     Parameters
     ----------
@@ -307,7 +338,7 @@ def feature_freq_power(features, time_col='index', units='s', column_names='all'
 
 def hrf(time, time_to_peak=6, undershoot_dur=12):
     """
-
+    This function creates a hemodynamic response function timeseries.
     Parameters
     ----------
     time: numpy array
@@ -333,7 +364,7 @@ def hrf(time, time_to_peak=6, undershoot_dur=12):
 
 def hrf_convolve_features(features, column_names='all', time_col='index'):
     """
-
+    This function convolves a hemodynamic response function with each column in a timeseries dataframe.
     Parameters
     ----------
     features: DataFrame
