@@ -9,17 +9,17 @@ import logging as emolog
 # TODO: make validator class
 
 class CodeTimeSeries:
-    """ This class processes a Datavyu CSV. converting the codes to a time series for bio-behavioral analysis."""
-    def __init__(self, interpolate_gaps=True, sampling_rate=5):
-        """
-        Parameters
+    """
+    This class processes a Datavyu CSV. converting the codes to a time series for bio-behavioral analysis.
+
+    Parameters
         ----------
         interpolate_gaps : bool
             Defaults is 'True'.  To leave gaps blank, set to False.
         sampling_rate : float
             Desired output sampling rate in Hz (samples per second). Default is 5 Hz.
-        """
-
+    """
+    def __init__(self, interpolate_gaps=True, sampling_rate=5):
         today = datetime.now()
 
         self.codes_df = None

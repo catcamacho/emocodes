@@ -13,8 +13,18 @@ sns.set(context='paper', style='white')
 
 class SummarizeVideoFeatures:
     """
-    This class produces a summary of video features to help users judge the suitability of each feature for regression
-    analysis.
+    This class produces a summary report of video features to help users judge the suitability of each feature for
+    regression analysis. After running the class, a PDF, markdown, and HTML version of the report are saved in the
+    output folder along with a folder of figures.
+
+    ```
+    >>> import emocodes as ec
+    >>> codes = 'video_features.csv' # DataFrame saved as CSV with feature timeseries
+    >>> output = './report' # directory to save the report in
+    >>> report = ec.SummarizeVideoFeatures()
+    >>> report.compile(codes, output)
+    ```
+
     """
     def __init__(self):
         self.features = None
@@ -42,21 +52,21 @@ class SummarizeVideoFeatures:
         This function runs the methods to create a features report.
         Parameters
         ----------
-        features : filepath
+        features: filepath
             A CSV containing a dataframe object with timeseries data for each feature you want to include in the report
-        out_dir : filepath
+        out_dir: filepath
             The full or relative path to the folder where you want the report saved to.
-        convolve_hrf : bool
+        convolve_hrf: bool
             Setting to convolve each feature with a double-gamma hemodynamic response function (HRF) before creating the
              report
-        column_names : list
+        column_names: list
             The columns to include in the feature analysis
-        sampling_rate : float
+        sampling_rate: float
             Sampling rate in Hz (samples per second) of the input data
-        units : str
+        units: str
             Must be 's', 'ms', 'm', or 'h' indicating seconds, milliseconds, minutes, or hours respectively. The units
             that the time variable (index) is in.
-        time_col : str
+        time_col: str
             The name of the column to use as time if not the index.
 
         """
@@ -91,33 +101,39 @@ class SummarizeVideoFeatures:
 
         # write markdown file
         with open(reportmd, 'w') as f:
-            f.write('# EmoCodes Analysis Summary Report\n')
-            f.write('**in_file:** {0} \n'.format(self.features_file))
-            f.write('---\n')
+            f.write('# EmoCodes Analysis Summary Report\n\n')
+            f.write('**in_file:** {0} \n\n'.format(self.features_file))
+            f.write('| Feature | Non-Zero | Min Value | Max Value |\n')
+            f.write('| :------ | :------: | :-------: | :-------: |\n')
+            for c in self.features.columns:
+                nonzero = (sum(self.features[c] != 0)/len(self.features))*100
+                f.write('| {0} | {1}% | {2} | {3} |\n'.format(c, round(nonzero, 2), round(self.features[c].min(), 1),
+                                                             round(self.features[c].max(), 1)))
+            f.write('\n')
+            f.write('******\n\n')
             if self.convolve_hrf_first:
-                f.write('## Features Included in this Analysis\n')
-                f.write('### Original Features\n')
-                f.write('![feature plots]({0})\n'.format(self.feature_plot))
-                f.write('### After HRF convolution (6s peak, 12s undershoot)\n')
-                f.write('![hrf-convolved feature plots]({0})\n'.format(self.hrf_feature_plots))
+                f.write('## Features Included in this Analysis\n\n')
+                f.write('### Original Features\n\n')
+                f.write('![feature plots]({0})\n\n'.format(self.feature_plot))
+                f.write('### After HRF convolution (6s peak, 12s undershoot)\n\n')
+                f.write('![hrf-convolved feature plots]({0})\n\n'.format(self.hrf_feature_plots))
             else:
-                f.write('## Features Included in this Analysis\n')
-                f.write('![feature plots]({0})\n'.format(self.feature_plot))
-            f.write('---\n')
-            f.write('## Spearman Correlations\n')
-            f.write('![correlation plots]({0})\n'.format(self.corr_plot))
-            f.write('---\n')
-            f.write('## Mean Instantaneous Phase Synchrony\n')
-            f.write('![mean IPS plots]({0})\n'.format(self.ips_plot))
-            f.write('---\n')
-            f.write('## Variance Inflation Factors\n')
+                f.write('## Features Included in this Analysis\n\n')
+                f.write('![feature plots]({0})\n\n'.format(self.feature_plot))
+            f.write('******\n\n')
+            f.write('## Spearman Correlations\n\n')
+            f.write('![correlation plots]({0})\n\n'.format(self.corr_plot))
+            f.write('******\n')
+            f.write('## Mean Instantaneous Phase Synchrony\n\n')
+            f.write('![mean IPS plots]({0})\n\n'.format(self.ips_plot))
+            f.write('******\n')
+            f.write('## Variance Inflation Factors\n\n')
             f.write('![VIF plots]({0})\n'.format(self.vif_plot))
-            f.write('---\n')
         f.close()
         # convert the markdown to HTML
         with open(reportmd, 'r') as f:
             text = f.read()
-            html = markdown.markdown(text)
+            html = markdown.markdown(text, extensions=['tables'])
         with open(reporthtml, 'w') as f:
             f.write(html)
         # convert the HTML to PDF
@@ -127,6 +143,8 @@ class SummarizeVideoFeatures:
     def compute_plot_corr(self):
         self.corr_scores = pairwise_corr(self.hrf_conv_features, column_names=self.column_names)
         plot_heatmap(self.corr_scores)
+        plt.title('Pair-wise Spearman Correlations')
+        plt.tight_layout()
         plt.savefig(os.path.join(self.fig_dir, 'corr_plot.svg'))
         self.corr_plot = os.path.join(self.fig_dir, 'corr_plot.svg')
         plt.close()
@@ -136,6 +154,8 @@ class SummarizeVideoFeatures:
         ips_df, ips = pairwise_ips(self.hrf_conv_features, column_names=self.column_names)
         self.ips_scores = ips_df
         plot_heatmap(ips_df)
+        plt.title('Pair-wise Mean IPS')
+        plt.tight_layout()
         plt.savefig(os.path.join(self.fig_dir, 'mean_ips_plot.svg'))
         self.ips_plot = os.path.join(self.fig_dir, 'mean_ips_plot.svg')
         plt.close()
@@ -144,6 +164,8 @@ class SummarizeVideoFeatures:
     def compute_plot_vif(self):
         self.vif_scores = vif_collinear(self.hrf_conv_features, column_names=self.column_names)
         plot_vif(self.vif_scores)
+        plt.title('VIF Scores')
+        plt.tight_layout()
         plt.savefig(os.path.join(self.fig_dir, 'vif_plot.svg'))
         self.vif_plot = os.path.join(self.fig_dir, 'vif_plot.svg')
         plt.close()
@@ -151,15 +173,21 @@ class SummarizeVideoFeatures:
 
     def plot_features(self):
         if self.convolve_hrf_first:
-            plt.figure(figsize=(8, 1.5 * len(self.column_names)))
-            self.hrf_conv_features.plot(kind='area', subplots=True, xlim=(0, self.hrf_conv_features.index[-1]))
+            plt.figure(figsize=(7, 1.5 * len(self.column_names)))
+            self.hrf_conv_features.plot(kind='line', subplots=True, xlim=(0, self.hrf_conv_features.index[-1]))
+            plt.xlabel('Time')
+            plt.suptitle('HRF-Convolved Features')
+            plt.ticklabel_format(style='plain')
             plt.tight_layout()
             plt.savefig(os.path.join(self.fig_dir, 'hrf_features_plot.svg'))
             self.hrf_feature_plots = os.path.join(self.fig_dir, 'hrf_features_plot.svg')
             plt.close()
 
-        plt.figure(figsize=(8, 1.5 * len(self.column_names)))
+        plt.figure(figsize=(7, 1.5 * len(self.column_names)))
         self.features.plot(kind='area', subplots=True, xlim=(0, self.features.index[-1]))
+        plt.ticklabel_format(style='plain')
+        plt.xlabel('Time')
+        plt.suptitle('Original Feature Values')
         plt.tight_layout()
         plt.savefig(os.path.join(self.fig_dir, 'features_plot.svg'))
         self.feature_plot = os.path.join(self.fig_dir, 'features_plot.svg')
@@ -216,6 +244,7 @@ def pairwise_ips(features, column_names='all'):
 def pairwise_corr(features, column_names='all'):
     """
     Computes the pair-wise Spearman correlation coefficient for a set of features.
+
     Parameters
     ----------
     features: DataFrame
@@ -249,6 +278,7 @@ def vif_collinear(features, column_names='all'):
     """
     Wraps the pliers variance inflation factor command. Computes the variance inflation factor for the specified
     columns in a set of features.
+
     Parameters
     ----------
     features: DataFrame
@@ -258,8 +288,8 @@ def vif_collinear(features, column_names='all'):
 
     Returns
     -------
-    vif_scores : Series
-        Pandas Series obect containing the VIF scores for each column in column_names.
+    vif_scores: Series
+        Pandas Series object containing the VIF scores for each column in column_names.
     """
     from pliers.diagnostics import variance_inflation_factors
 
@@ -277,18 +307,19 @@ def vif_collinear(features, column_names='all'):
 def hrf(time, time_to_peak=6, undershoot_dur=12):
     """
     This function creates a hemodynamic response function timeseries.
+
     Parameters
     ----------
-    time : numpy array
+    time: numpy array
         a 1D numpy array that makes up the x-axis (time) of our HRF in seconds
-    time_to_peak : int
+    time_to_peak: int
         Time to HRF peak in seconds. Default is 6 seconds.
-    undershoot_dur : int
-        Duration of the post-peak undershoot.  Default is 12 seconds.
+    undershoot_dur: int
+        Duration of the post-peak undershoot. Default is 12 seconds.
 
     Returns
     -------
-    hrf_timeseries : numpy array
+    hrf_timeseries: numpy array
         The y-values for the HRF at each time point
     """
 
@@ -303,6 +334,7 @@ def hrf(time, time_to_peak=6, undershoot_dur=12):
 def hrf_convolve_features(features, column_names='all', time_col='index', units='s'):
     """
     This function convolves a hemodynamic response function with each column in a timeseries dataframe.
+
     Parameters
     ----------
     features: DataFrame
@@ -310,8 +342,8 @@ def hrf_convolve_features(features, column_names='all', time_col='index', units=
     column_names: list
         List of columns names to use.  Default is "all"
     time_col: str
-        The name of the time column to use if not the index. Must be in seconds. Default is "index".
-    units : str
+        The name of the time column to use if not the index. Default is "index".
+    units: str
         Must be 'ms','s','m', or 'h' to denote milliseconds, seconds, minutes, or hours respectively.
 
     Returns
@@ -330,10 +362,13 @@ def hrf_convolve_features(features, column_names='all', time_col='index', units=
 
     if units == 'm' or units == 'minutes':
         features.index = features.index * 60
+        time = features.index.to_numpy()
     if units == 'h' or units == 'hours':
         features.index = features.index * 3600
+        time = features.index.to_numpy()
     if units == 'ms' or units == 'milliseconds':
         features.index = features.index / 1000
+        time = features.index.to_numpy()
 
     convolved_features = pd.DataFrame(index=time)
     hrf_sig = hrf(time)

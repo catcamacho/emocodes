@@ -24,9 +24,9 @@ class InterraterReliability:
 
         Parameters
         ----------
-        list_of_codes : list
+        list_of_codes: list
             list of DataFrame objects OR filepaths to CSVs containing DataFrame objects to stack.
-        list_of_raters : list
+        list_of_raters: list
             Optional. Custom list of rater names/identifiers. If none are entered, defaults to naming as "rater01,
             rater02..." and so on.
 
@@ -40,11 +40,11 @@ class InterraterReliability:
 
     def compute_iccs(self, column_labels):
         """
-        This method computes the overall
+        This method computes the intraclass correlation across raters in a dataset.
 
         Parameters
         ----------
-        column_labels : list
+        column_labels: list
             List of string column labels to compute ICCs for. Default is "None", which computes ICCs for all columns
             not the index/time column and "rater".
 
@@ -58,7 +58,7 @@ class InterraterReliability:
 
         Parameters
         ----------
-        out_file_name : str
+        out_file_name: str
             File path and file name to save the ICC results table.
 
         """
@@ -72,16 +72,16 @@ class InterraterReliability:
 
         Parameters
         ----------
-        list_of_codes : list
+        list_of_codes: list
             A list of codes to compute the ICCs of.  List can be of DataFrame objects or of filepaths to CSVs containing
             DataFrame objects.
-        list_of_raters : list
+        list_of_raters: list
             A list of strings to label the individual raters for the codes in the list_of_codes. If None, this function
             creates a list of ['rater01','rater02',..] and so on.
-        column_labels : list OR None
+        column_labels: list OR None
             The columns to compute ICCs for.  If None, will compute ICCs for all columns except for the 'time' and
             'rater' columns.
-        out_file_name : str
+        out_file_name: str
             The filepath and file name to save the ICC results table as.
 
         """
@@ -101,16 +101,22 @@ class Consensus:
     This class can be used to compute the consensus (percent overlap) between two or more sets of codes.
 
     #### Use Case 1: compute overlap between trainee codes and exemplar codes
-    >>> con = Consensus()
-    >>> con.training_consensus([trainee1_codes_df, trainee2_codes_df], original_codes_df, ['Lizzi','Cat'])
-    >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
-    >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
 
+    ```
+        >>> con = Consensus()
+        >>> con.training_consensus([trainee1_codes_df, trainee2_codes_df], original_codes_df, ['Lizzi','Cat'])
+        >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
+        >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
+    ```
     #### Use Case 2: compute overlap pairwise between 2 or more raters
-    >>> con = Consensus()
-    >>> con.interrater_consensus([Lizzi_codes_df, Cat_codes_df], ['Lizzi','Cat'])
-    >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
-    >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
+
+    ```
+        >>> con = Consensus()
+        >>> con.interrater_consensus([Lizzi_codes_df, Cat_codes_df], ['Lizzi','Cat'])
+        >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
+        >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
+    ```
+
     """
     def __init__(self):
         self.codes_list = None
@@ -121,17 +127,19 @@ class Consensus:
 
     def training_consensus(self, trainee_codes_list, exemplar_code_file, trainee_list=None):
         """
+        This method computes consensus ratings for each set of trainee codes against an exemplar/master set. It produces
+        a report of the percent overlap between the codes as well as a list of nonmatching segments.
 
         Parameters
         ----------
-        trainee_codes_list : list
-
-        exemplar_code_file : filepath OR DataFrame
-
-        trainee_list
-
-        Returns
-        -------
+        trainee_codes_list: list
+            A list of codes.  List can be of DataFrame objects or of filepaths to CSVs containing DataFrame objects.
+        exemplar_code_file: filepath OR DataFrame
+            The DataFrame to compare each of the trainee codes to. Can be the string filename to a CSV or a DataFrame
+            object.
+        trainee_list: list
+            Optional. A list of strings with rater names to use.  If None, will automatically assign "rater01",
+            rater02", etc.
 
         """
         self.codes_list = trainee_codes_list
@@ -152,12 +160,14 @@ class Consensus:
 
     def interrater_consensus(self, codes_list, rater_list=None):
         """
+        This method compares a list of codes pairwise and produces 1) a measure of overlap for each code and 2) a
+        list of timestamps for the mismatched segments.
 
         Parameters
         ----------
-        codes_list : list
+        codes_list: list
             List of dataframe objects OR list of file paths to CSVs containing dataframe objects
-        rater_list : list
+        rater_list: list
             Optional.  List of identifiers for the list of codes.
 
         """
@@ -187,15 +197,16 @@ def compile_ratings(list_dfs, list_raters=None):
 
     Parameters
     ----------
-    list_dfs : list
+    list_dfs: list
         A list of DataFrames or CSV files containing dataframes.
-    list_raters : list
+    list_raters: list
         Default is None. A list of preferred rater names. If none are passed, default is to use "raterXX"
         (e.g., "rater01' for the first dataframe)
 
     Returns
     -------
-    single_df : DataFrame
+    single_df: DataFrame
+        A single dataframe of the input dataframes stacked, preserving the index.
     """
 
     ratings_dfs = []
@@ -230,19 +241,19 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
 
     Parameters
     ----------
-    index_label : str
+    index_label: str
         The label denoting each measurement. This must be consistent across all raters. Default is "time".
     ratings: DataFrame
         DataFrame with the ratings information stored in a long format.
-    rater_col_name : str
+    rater_col_name: str
         The name of the column containing rater information. Default is "rater"
-    column_labels : list
+    column_labels: list
         The list of variables to computer inter-rater ICCs for. Default is None, which means it will compute ICCs for
         every column in the DataFrame not equal to the rater_col_name or the index_label.
 
     Returns
     -------
-    icc_df : DataFrame
+    icc_df: DataFrame
         The dataframe object containing instance-level and overall intraclass correlation values.
 
     """
@@ -278,17 +289,17 @@ def compute_exact_match(ratings_list, raters_list, reference):
 
     Parameters
     ----------
-    ratings_list : list
+    ratings_list: list
         List of dataframe objects or CSV filenames of saved dataframes.
-    raters_list : list
+    raters_list: list
         List of raters corresponding to each ratings DataFrame in the ratings_list.
-    reference : DataFrame or filepath or None
+    reference: DataFrame or filepath or None
         The DataFrame object or CSV filename of the DataFrame object to compare each DataFrame in ratings_list to.
         If None, this function performs a pair-wise comparison instead.
 
     Returns
     -------
-    exact_match_stats : DataFrame
+    exact_match_stats: DataFrame
         A DataFrame with the match statistic for each pair of raters and for each column in the codes.
     """
 
@@ -341,16 +352,16 @@ def mismatch_segments_list(df1, df2, time_column=0):
 
     Parameters
     ----------
-    df1 : DataFrame object OR filepath
+    df1: DataFrame object OR filepath
         The dataframe to compare to df2. Index must be the time or count variable.
-    df2 : DataFrame object OR filepath
+    df2: DataFrame object OR filepath
         The dataframe to compare to df1.  Index must be time or count variable
-    time_column : str OR int
+    time_column: str OR int
         name or index of column to use as the time variable. Default is 0 (first column)
 
     Returns
     -------
-    nonmatching_segments : DataFrame
+    nonmatching_segments: DataFrame
         A table listing all the segments during which the code in question is not in agreement between the two sets of
         ratings.  Time is in the same units/notation as the index.
 
