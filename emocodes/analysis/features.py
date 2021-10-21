@@ -3,7 +3,6 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 import itertools
-from sklearn.preprocessing import MinMaxScaler
 import os
 from emocodes.plotting import plot_heatmap, plot_vif
 import markdown
@@ -17,13 +16,11 @@ class SummarizeVideoFeatures:
     regression analysis. After running the class, a PDF, markdown, and HTML version of the report are saved in the
     output folder along with a folder of figures.
 
-    ```
-    >>> import emocodes as ec
-    >>> codes = 'video_features.csv' # DataFrame saved as CSV with feature timeseries
-    >>> output = './report' # directory to save the report in
-    >>> report = ec.SummarizeVideoFeatures()
-    >>> report.compile(codes, output)
-    ```
+        >>> import emocodes as ec
+        >>> codes = 'video_features.csv' # DataFrame saved as CSV with feature timeseries
+        >>> output = './report' # directory to save the report in
+        >>> report = ec.SummarizeVideoFeatures()
+        >>> report.compile(codes, output)
 
     """
     def __init__(self):

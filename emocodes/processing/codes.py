@@ -1,12 +1,11 @@
 # import needed libraries
 import pandas as pd
 from datetime import datetime
-from os.path import abspath, isdir, basename
-from os import mkdir
+from os.path import abspath, basename
+from os import makedirs
 from emocodes.processing.video import get_video_length
 import logging as emolog
 
-# TODO: make validator class
 
 class CodeTimeSeries:
     """
@@ -14,9 +13,9 @@ class CodeTimeSeries:
 
     Parameters
         ----------
-        interpolate_gaps : bool
-            Defaults is 'True'.  To leave gaps blank, set to False.
-        sampling_rate : float
+        interpolate_gaps: bool
+            Defaults is 'True'. To leave gaps blank (NaNs), set to False.
+        sampling_rate: float
             Desired output sampling rate in Hz (samples per second). Default is 5 Hz.
     """
     def __init__(self, interpolate_gaps=True, sampling_rate=5):
@@ -30,12 +29,24 @@ class CodeTimeSeries:
         self.proc_codes_df = None
 
         # set up logging
-        if not isdir('./logs'):
-            mkdir('./logs')
-        log_file = './logs/file_{0}.log'.format(today.strftime('%Y%m%d'))
+        makedirs('./logs', exist_ok=True)
+        log_file = './logs/logfile_{0}.log'.format(today.strftime('%Y%m%d'))
         emolog.basicConfig(filename=log_file, level=emolog.DEBUG)
 
     def proc_codes_file(self, codes_file, video_file, save_file_name='video_codes_time_series', file_type='csv'):
+        """
+
+        Parameters
+        ----------
+        codes_file
+        video_file
+        save_file_name
+        file_type
+
+        Returns
+        -------
+
+        """
         self.load_codes_file(codes_file)
         self.find_video_length(video_file)
         self.get_labels()
@@ -43,6 +54,16 @@ class CodeTimeSeries:
         self.save(save_file_name=save_file_name, file_type=file_type)
 
     def load_codes_file(self, codes_file):
+        """
+
+        Parameters
+        ----------
+        codes_file
+
+        Returns
+        -------
+
+        """
         self.codes_df = pd.read_csv(codes_file, index_col=None)
         emolog.info("loading: " + codes_file)
         return self
@@ -52,11 +73,27 @@ class CodeTimeSeries:
         return self
 
     def find_video_length(self, video_file):
+        """
+
+        Parameters
+        ----------
+        video_file
+
+        Returns
+        -------
+
+        """
         self.video_duration = get_video_length(video_file)
         emolog.info("using video: " + video_file)
         return self
 
     def convert_codes(self):
+        """
+
+        Returns
+        -------
+
+        """
         self.proc_codes_df = validate_convert_timestamps(self.labels, self.codes_df, self.video_duration,
                                                          self.sampling_rate, self.interpolate_gaps, do_log=True)
         return self
@@ -91,12 +128,12 @@ def get_code_labels(codes_df):
 
     Parameters
     ---------
-    codes_df : DataFrame
+    codes_df: DataFrame
         The dataframe of codes created by importing the Datavyu codes using pandas.
 
     Returns
     -------
-    labels : list
+    labels: list
         Variable names of the codes from Datavyu
     """
 
@@ -116,28 +153,28 @@ def validate_convert_timestamps(labels, codes_df, video_duration, sampling_rate,
         Parameters
         ----------
 
-        labels : list
+        labels: list
             a list of strings which are the unique column variable labels in the dataframe.
             The output of the get_code_labels function.
 
-        codes_df : DataFrame
+        codes_df: DataFrame
             the dataframe of Datavyu codes
 
-        video_duration : int
+        video_duration: int
             The length of video in milliseconds, the output of get_video_length
 
-        sampling_rate : int
+        sampling_rate: int
             The sampling rate in Hz that the file should be saved as.
 
-        interpolate_gaps : bool
+        interpolate_gaps: bool
             Default is set to True.  If you wish for gaps to be preserved as NaNs, set to False.
 
-        do_log : bool
+        do_log: bool
             Default is set to False. If logging is being used, set to True.
 
         Returns
         -------
-        timeseries_df : DataFrame
+        timeseries_df: DataFrame
             The resampled code time series
         """
 
@@ -198,16 +235,16 @@ def save_timeseries(timeseries_df, outfile_type, outfile_name, do_log=False):
     Parameters
     ----------
 
-    timeseries_df : DataFrame
+    timeseries_df: DataFrame
         The resampled time series from validate_convert_timestamps
 
-    outfile_type : str ('csv','excel','tab','space')
+    outfile_type: str ('csv','excel','tab','space')
         the file type to save the time series as.
 
-    outfile_name : str
+    outfile_name: str
         The file prefix for the output file.
 
-    do_log : bool
+    do_log: bool
         Default is set to False. If logging is being used, set to True.
 
     Returns
@@ -222,19 +259,19 @@ def save_timeseries(timeseries_df, outfile_type, outfile_name, do_log=False):
     
     if outfile_type == 'csv':
         # save as a csv
-        out_file='{0}_{1}.csv'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S'))
+        out_file='{0}_{1}.csv'.format(outfile_name, today.strftime('%Y%m%d'))
         timeseries_df.to_csv(out_file, na_rep='NA')
     elif outfile_type == 'excel':
         # save as an excel file
-        out_file='{0}_{1}.xlsx'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S'))
+        out_file='{0}_{1}.xlsx'.format(outfile_name, today.strftime('%Y%m%d'))
         timeseries_df.to_excel(out_file, na_rep='NA')
     elif outfile_type == 'tab':
         # save as a tab-delimited file
-        out_file='{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S'))
+        out_file='{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d'))
         timeseries_df.to_csv(out_file, sep='\t', na_rep='NA')
     elif outfile_type == 'space':
         # save as a space-delimited file
-        out_file='{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d-%H%M%S'))
+        out_file='{0}_{1}.txt'.format(outfile_name, today.strftime('%Y%m%d'))
         timeseries_df.to_csv(out_file, sep='  ', na_rep='NA')
     else:
         msg = 'Warning: data note saved! Please indicate the file format: csv, excel, tab, space'

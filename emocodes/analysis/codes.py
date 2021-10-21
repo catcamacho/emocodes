@@ -100,22 +100,19 @@ class Consensus:
     """
     This class can be used to compute the consensus (percent overlap) between two or more sets of codes.
 
-    #### Use Case 1: compute overlap between trainee codes and exemplar codes
+    Use Case 1: compute overlap between trainee codes and exemplar codes
 
-    ```
         >>> con = Consensus()
         >>> con.training_consensus([trainee1_codes_df, trainee2_codes_df], original_codes_df, ['Lizzi','Cat'])
         >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
         >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
-    ```
-    #### Use Case 2: compute overlap pairwise between 2 or more raters
 
-    ```
+    Use Case 2: compute overlap pairwise between 2 or more raters
+
         >>> con = Consensus()
         >>> con.interrater_consensus([Lizzi_codes_df, Cat_codes_df], ['Lizzi','Cat'])
         >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
         >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
-    ```
 
     """
     def __init__(self):

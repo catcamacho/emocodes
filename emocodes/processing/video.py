@@ -3,41 +3,34 @@ import pandas as pd
 import librosa
 import numpy as np
 import os.path
-from subprocess import check_call
-
 
 class ExtractVideoFeatures:
     """
 
     """
 
-    def __init__(self, sampling_rate=1):
-        """
-
-        Parameters
-        ----------
-        sampling_rate : float
-            The sampling rate in Hz
-        """
-
-        self.sampling_rate = sampling_rate
+    def __init__(self):
+        self.sampling_rate = None
         self.resampled_video = None
         self.audio_features_df = None
         self.visual_features_df = None
         self.video_features_df = None
 
-    def extract_features(self, video_file):
+    def extract_features(self, video_file, sampling_rate=1):
         """
 
         Parameters
         ----------
-        video_file : str
+        video_file: str
             The filepath to the video file to be processed
+        sampling_rate: float
+
 
         Returns
         -------
 
         """
+        self.sampling_rate = sampling_rate
         self.extract_visual_features(video_file)
         self.extract_audio_features(video_file)
         return self
@@ -233,7 +226,7 @@ def extract_audio_features(in_file, sampling_rate):
     Returns
     -------
     low_level_audio_df : DataFrame
-        Pandas dataframe with a column per low-level feature.py (index is time).
+        Pandas dataframe with a column per low-level feature (index is time).
     """
 
     resample_rate = int(1000 / sampling_rate)
