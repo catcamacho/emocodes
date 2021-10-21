@@ -5,11 +5,11 @@ from itertools import combinations
 
 
 class InterraterReliability:
+    """
+    This class can be used to compute metrics of interrater reliability from a list of dataframes/codes (with
+    identical column names).
+    """
     def __init__(self):
-        """
-        This class can be used to compute metrics of interrater reliability from a list of dataframes/codes (with
-        identical column names).
-        """
         self.list_of_codes = None
         self.list_of_raters = None
         self.long_codes = None
@@ -97,22 +97,22 @@ class InterraterReliability:
 
 
 class Consensus:
+    """
+    This class can be used to compute the consensus (percent overlap) between two or more sets of codes.
+
+    #### Use Case 1: compute overlap between trainee codes and exemplar codes
+    >>> con = Consensus()
+    >>> con.training_consensus([trainee1_codes_df, trainee2_codes_df], original_codes_df, ['Lizzi','Cat'])
+    >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
+    >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
+
+    #### Use Case 2: compute overlap pairwise between 2 or more raters
+    >>> con = Consensus()
+    >>> con.interrater_consensus([Lizzi_codes_df, Cat_codes_df], ['Lizzi','Cat'])
+    >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
+    >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
+    """
     def __init__(self):
-        """
-        This class can be used to compute the consensus (percent overlap) between two or more sets of codes.
-
-        #### Use Case 1: compute overlap between trainee codes and exemplar codes
-        >>> con = Consensus()
-        >>> con.training_consensus([trainee1_codes_df, trainee2_codes_df], original_codes_df, ['Lizzi','Cat'])
-        >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
-        >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
-
-        #### Use Case 2: compute overlap pairwise between 2 or more raters
-        >>> con = Consensus()
-        >>> con.interrater_consensus([Lizzi_codes_df, Cat_codes_df], ['Lizzi','Cat'])
-        >>> con.consensus_scores.to_csv('consensus_scores.csv') #save scores table as a csv
-        >>> con.mismatch_segments.to_csv('mismatched_segments.csv') #save the list of mismatched time segments as a csv
-        """
         self.codes_list = None
         self.raters = None
         self.original_codes = None
@@ -124,8 +124,10 @@ class Consensus:
 
         Parameters
         ----------
-        trainee_codes_list
-        exemplar_code_file
+        trainee_codes_list : list
+
+        exemplar_code_file : filepath OR DataFrame
+
         trainee_list
 
         Returns
@@ -153,8 +155,10 @@ class Consensus:
 
         Parameters
         ----------
-        codes_list
-        trainee_list
+        codes_list : list
+            List of dataframe objects OR list of file paths to CSVs containing dataframe objects
+        rater_list : list
+            Optional.  List of identifiers for the list of codes.
 
         """
         self.codes_list = codes_list

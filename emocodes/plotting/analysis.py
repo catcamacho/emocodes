@@ -5,31 +5,41 @@ sns.set(context='talk', style='white')
 
 def plot_heatmap(data):
     """
-
+    This function plots a heatmap.
     Parameters
     ----------
-    data
+    data : DataFrame
+        NxN dataframe to plot.
 
     Returns
     -------
-    fig
+    fig : object
+        matplotlib figure object of the plot
 
     """
-    fig = sns.heatmap(data, figsize=(12, 10), center=0, annot=True)
+    plt.figure(figsize=(8, 7))
+    fig = sns.heatmap(data, center=0, annot=True)
     fig.set_xticklabels(fig.get_xticklabels(), rotation=30, ha='right')
     plt.tight_layout()
     return fig
 
 def plot_vif(vif_scores):
     """
+    This function plots variance inflation factor scores with the horizontal lines denoting the standard cut offs:
+     * <2 = not collinear
+     * 2-5 = weakly collinear and likely okay to include together in a model
+     * 5-10 = moderately collinear, proceed with caution
+     * >10 = highly collinear, do not include together in a multiple linear regression model
 
     Parameters
     ----------
-    vif_scores
+    vif_scores : Series
+        VIF scores to plot.
 
     Returns
     -------
-    fig
+    fig : object
+        matplotlib figure object of the plot
     """
     if len(vif_scores) < 8:
         w = len(vif_scores)

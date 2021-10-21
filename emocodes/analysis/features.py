@@ -1,19 +1,22 @@
 import matplotlib.pyplot as plt
+import seaborn as sns
 import pandas as pd
 import numpy as np
 import itertools
 from sklearn.preprocessing import MinMaxScaler
 import os
-from emocodes.plotting import plot_heatmap, plot_vif, make_num_plot
+from emocodes.plotting import plot_heatmap, plot_vif
 import markdown
 import weasyprint as wp
 
+sns.set(context='paper', style='white')
+
 class SummarizeVideoFeatures:
+    """
+    This class produces a summary of video features to help users judge the suitability of each feature for regression
+    analysis.
+    """
     def __init__(self):
-        """
-        This class produces a summary of video features to help users judge the suitability of each feature for regression
-        analysis.
-        """
         self.features = None
         self.features_file = None
         self.sampling_rate = None
@@ -73,13 +76,12 @@ class SummarizeVideoFeatures:
 
         if convolve_hrf:
             self.hrf_conv_features = hrf_convolve_features(self.features, column_names=self.column_names,
-                                                           time_col=self.time_col)
+                                                           time_col=self.time_col, units='ms')
         else:
             self.hrf_conv_features = self.features
         self.compute_plot_corr()
         self.compute_plot_ips()
         self.compute_plot_vif()
-        self.compute_plot_power()
         self.plot_features()
 
         # set filenames for each report output type
@@ -95,9 +97,9 @@ class SummarizeVideoFeatures:
             if self.convolve_hrf_first:
                 f.write('## Features Included in this Analysis\n')
                 f.write('### Original Features\n')
-                f.write('![feature plots]({0})/n'.format(self.feature_plot))
+                f.write('![feature plots]({0})\n'.format(self.feature_plot))
                 f.write('### After HRF convolution (6s peak, 12s undershoot)\n')
-                f.write('![hrf-convolved feature plots]({0})/n'.format(self.hrf_feature_plots))
+                f.write('![hrf-convolved feature plots]({0})\n'.format(self.hrf_feature_plots))
             else:
                 f.write('## Features Included in this Analysis\n')
                 f.write('![feature plots]({0})\n'.format(self.feature_plot))
@@ -111,61 +113,57 @@ class SummarizeVideoFeatures:
             f.write('## Variance Inflation Factors\n')
             f.write('![VIF plots]({0})\n'.format(self.vif_plot))
             f.write('---\n')
-            f.write('## Power Spectra\n')
-            f.write('![power plots]({0})\n'.format(self.power_plot))
-            f.write('---\n')
         f.close()
         # convert the markdown to HTML
-        with open('Picnic.md', 'r') as f:
+        with open(reportmd, 'r') as f:
             text = f.read()
             html = markdown.markdown(text)
         with open(reporthtml, 'w') as f:
             f.write(html)
         # convert the HTML to PDF
         wp.HTML(reporthtml).write_pdf(reportpdf)
-
         return self
 
     def compute_plot_corr(self):
-        self.corr_scores = pairwise_corr(self.hrf_conv_features, column_names=self.column_names, nan_policy='omit')
-        f = plot_heatmap(self.corr_scores)
-        plt.savefig(f, os.join(self.fig_dir, 'corr_plot.svg'))
-        self.corr_plot = os.join(self.fig_dir, 'corr_plot.svg')
+        self.corr_scores = pairwise_corr(self.hrf_conv_features, column_names=self.column_names)
+        plot_heatmap(self.corr_scores)
+        plt.savefig(os.path.join(self.fig_dir, 'corr_plot.svg'))
+        self.corr_plot = os.path.join(self.fig_dir, 'corr_plot.svg')
+        plt.close()
         return self
 
     def compute_plot_ips(self):
         ips_df, ips = pairwise_ips(self.hrf_conv_features, column_names=self.column_names)
         self.ips_scores = ips_df
-        f = plot_heatmap(ips_df)
-        plt.savefig(f, os.join(self.fig_dir, 'mean_ips_plot.svg'))
-        self.ips_plot = os.join(self.fig_dir, 'mean_ips_plot.svg')
+        plot_heatmap(ips_df)
+        plt.savefig(os.path.join(self.fig_dir, 'mean_ips_plot.svg'))
+        self.ips_plot = os.path.join(self.fig_dir, 'mean_ips_plot.svg')
+        plt.close()
         return self
 
     def compute_plot_vif(self):
         self.vif_scores = vif_collinear(self.hrf_conv_features, column_names=self.column_names)
-        f = plot_vif(self.vif_scores)
-        plt.savefig(f, os.join(self.fig_dir, 'vif_plot.svg'))
-        self.vif_plot = os.join(self.fig_dir, 'vif_plot.svg')
-        return self
-
-    def compute_plot_power(self):
-        self.power_spectra = feature_freq_power(self.hrf_conv_features, time_col=self.time_col, units=self.units,
-                                                column_names=self.column_names, sampling_rate=self.sampling_rate)
-        f = make_num_plot(self.power_spectra)
-        plt.savefig(f, os.join(self.fig_dir, 'power_plot.svg'))
-        self.power_plot = os.join(self.fig_dir, 'power_plot.svg')
-
+        plot_vif(self.vif_scores)
+        plt.savefig(os.path.join(self.fig_dir, 'vif_plot.svg'))
+        self.vif_plot = os.path.join(self.fig_dir, 'vif_plot.svg')
+        plt.close()
         return self
 
     def plot_features(self):
         if self.convolve_hrf_first:
-            f = make_num_plot(self.hrf_conv_features)
-            plt.savefig(f, os.join(self.fig_dir, 'hrf_features_plot.svg'))
-            self.hrf_feature_plots = os.join(self.fig_dir, 'hrf_features_plot.svg')
+            plt.figure(figsize=(8, 1.5 * len(self.column_names)))
+            self.hrf_conv_features.plot(kind='area', subplots=True, xlim=(0, self.hrf_conv_features.index[-1]))
+            plt.tight_layout()
+            plt.savefig(os.path.join(self.fig_dir, 'hrf_features_plot.svg'))
+            self.hrf_feature_plots = os.path.join(self.fig_dir, 'hrf_features_plot.svg')
+            plt.close()
 
-        f = make_num_plot(self.features)
-        plt.savefig(f, os.join(self.fig_dir, 'features_plot.svg'))
-        self.feature_plot = os.join(self.fig_dir, 'features_plot.svg')
+        plt.figure(figsize=(8, 1.5 * len(self.column_names)))
+        self.features.plot(kind='area', subplots=True, xlim=(0, self.features.index[-1]))
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.fig_dir, 'features_plot.svg'))
+        self.feature_plot = os.path.join(self.fig_dir, 'features_plot.svg')
+        plt.close()
         return self
 
 
@@ -193,7 +191,7 @@ def pairwise_ips(features, column_names='all'):
     from scipy.signal import hilbert
 
     if column_names == 'all':
-        column_names = features.columns
+        column_names = features.columns.to_list()
 
     ips_series = np.ones((len(column_names), len(column_names), len(features)))
     mean_ips_df = pd.DataFrame(1, columns=column_names, index=column_names)
@@ -215,7 +213,7 @@ def pairwise_ips(features, column_names='all'):
     return mean_ips_df, ips_series
 
 
-def pairwise_corr(features, column_names='all', nan_policy='omit'):
+def pairwise_corr(features, column_names='all'):
     """
     Computes the pair-wise Spearman correlation coefficient for a set of features.
     Parameters
@@ -224,8 +222,6 @@ def pairwise_corr(features, column_names='all', nan_policy='omit'):
         DataFrame with signals to be analyzed.
     column_names: list
         List of columns to compare pairwise in the ratings DataFrame. Default is 'all'.
-    nan_policy: str
-        policy for dealing with NaNs that is passed to scipy.spearmanr.  Default is "omit".
 
     Returns
     -------
@@ -242,7 +238,7 @@ def pairwise_corr(features, column_names='all', nan_policy='omit'):
     for pair in combs:
         a = pair[0]
         b = pair[1]
-        r, p = spearmanr(features[a], features[b], nan_policy=nan_policy)
+        r, p = spearmanr(features[a], features[b], nan_policy='omit')
         corr_mat_df.loc[a, b] = r
         corr_mat_df.loc[b, a] = r
 
@@ -278,79 +274,21 @@ def vif_collinear(features, column_names='all'):
     return vif_scores
 
 
-def feature_freq_power(features, time_col='index', units='s', column_names='all', sampling_rate=10):
-    """
-    This function computes the power spectra for each feature.
-
-    Parameters
-    ----------
-    features: DataFrame
-        A Pandas dataframe with the feature signals to convolve.
-    time_col: str
-        Name of the column containing time information.  Default is to use the DataFrame index.
-    units: str ['H', 'M', 's', 'ms']
-        units that the time variable is is (if not a datetime index). Default is 's'.
-    column_names: list
-        List of columns to conduct spectrum analysis on.  Default is to use all the columns.
-    sampling_rate: int or float
-        input sampling rating in Hz.
-
-    Returns
-    -------
-    power: DataFrame
-        A DataFrame with the power spectrums for each variable in columns_names (index is frequency up to nyquist.)
-
-    """
-
-    if units != 's':
-        if time_col == 'index':
-            features['time_orig_index'] = features.index
-            features.index = range(0, len(features))
-            features.index.name = None
-            time_col = 'time_orig_index'
-        if units == 'm' or units == 'minutes':
-            features[time_col] = features[time_col] * 60
-        if units == 'm' or units == 'hours':
-            features[time_col] = features[time_col] * 3600
-        if units == 'ms' or units == 'milliseconds':
-            features[time_col] = features[time_col] / 1000
-
-    if column_names != 'all':
-        try:
-            features = features[[time_col] + column_names]
-        except Exception:
-            raise ValueError("column names not found in features dataframe.")
-
-    mm = MinMaxScaler((0, 1))
-    features[column_names] = mm.fit_transform(features[column_names].to_numpy())
-
-    power = pd.DataFrame(columns=column_names)
-    for a in column_names:
-        fourier_transform = np.fft.rfft(features[a])
-        abs_fourier_transform = np.abs(fourier_transform)
-        power[a] = np.square(abs_fourier_transform)
-
-    power.index = np.linspace(0, sampling_rate / 2, len(power))
-    power.index.name = 'Frequency'
-
-    return power
-
-
 def hrf(time, time_to_peak=6, undershoot_dur=12):
     """
     This function creates a hemodynamic response function timeseries.
     Parameters
     ----------
-    time: numpy array
+    time : numpy array
         a 1D numpy array that makes up the x-axis (time) of our HRF in seconds
-    time_to_peak: int
+    time_to_peak : int
         Time to HRF peak in seconds. Default is 6 seconds.
-    undershoot_durL int
+    undershoot_dur : int
         Duration of the post-peak undershoot.  Default is 12 seconds.
 
     Returns
     -------
-    hrf_timeseries: numpy array
+    hrf_timeseries : numpy array
         The y-values for the HRF at each time point
     """
 
@@ -362,7 +300,7 @@ def hrf(time, time_to_peak=6, undershoot_dur=12):
     return hrf_timeseries
 
 
-def hrf_convolve_features(features, column_names='all', time_col='index'):
+def hrf_convolve_features(features, column_names='all', time_col='index', units='s'):
     """
     This function convolves a hemodynamic response function with each column in a timeseries dataframe.
     Parameters
@@ -373,6 +311,8 @@ def hrf_convolve_features(features, column_names='all', time_col='index'):
         List of columns names to use.  Default is "all"
     time_col: str
         The name of the time column to use if not the index. Must be in seconds. Default is "index".
+    units : str
+        Must be 'ms','s','m', or 'h' to denote milliseconds, seconds, minutes, or hours respectively.
 
     Returns
     -------
@@ -386,8 +326,16 @@ def hrf_convolve_features(features, column_names='all', time_col='index'):
         time = features.index.to_numpy()
     else:
         time = features[time_col]
+        features.index = time
 
-    convolved_features = pd.DataFrame(columns=[time_col] + column_names)
+    if units == 'm' or units == 'minutes':
+        features.index = features.index * 60
+    if units == 'h' or units == 'hours':
+        features.index = features.index * 3600
+    if units == 'ms' or units == 'milliseconds':
+        features.index = features.index / 1000
+
+    convolved_features = pd.DataFrame(index=time)
     hrf_sig = hrf(time)
     for a in column_names:
         convolved_features[a] = np.convolve(features[a], hrf_sig)[:len(time)]
