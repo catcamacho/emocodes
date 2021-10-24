@@ -11,12 +11,13 @@ class ExtractVideoFeatures:
 
     - **Luminance**: The frame-by-frame brightness level
     - **Vibrance**: The variance of color channels of each frame
-    - **Saliency**: Fraction of highly salient visual information for each frame according to the Itti & Koch
+    - **Saliency**: Fraction of highly salient visual information for each frame according to the Itti & Koch \
     algorithm: https://doi.org/10.1109/34.730558
     - **Sharpness**: Degree of blur or sharpness of each frame
     - **Dynamic Tempo**: the rolling tempo of the audio track
     - **Loudness**: Operationalized as the root-mean-square of the audio amplitude
-    - **Beats**: if a musical beat falls on that timestamp. For files of less than 30Hz, this variable is likely not useful.
+    - **Beats**: if a musical beat falls on that timestamp. For files of less than 30Hz, this variable is likely not \
+    useful.
 
     Example Usage:
         >>> import emocodes as ec
@@ -38,6 +39,7 @@ class ExtractVideoFeatures:
     def extract_features(self, video_file, sampling_rate=1, outfile=None):
         """
         This method extracts the frame-by-frame visual and aural features from an MP4 file.
+
         Parameters
         ----------
         video_file: str
@@ -48,6 +50,7 @@ class ExtractVideoFeatures:
             Optional. The desired output filename for the features CSV. If None, defaults to the path and name of the
             MP4 video file with '.mp4' replaced with '_features.csv'
         """
+
         self.sampling_rate = sampling_rate
         self.video = video_file
         self.extract_visual_features(self.video)
@@ -63,6 +66,7 @@ class ExtractVideoFeatures:
     def extract_audio_features(self, video_file):
         """
         This method extracts the frame by frame audio features from a video input.
+
         Parameters
         ----------
         video_file: str
@@ -97,13 +101,24 @@ class ExtractVideoFeatures:
         self.sampling_rate = sampling_rate
         if self.combined_df:
             self.resampled_features = resample_df(self.combined_df, sampling_rate)
+            if 'onset_ms' in self.resampled_features.columns():
+                self.resampled_features['onset_ms'] = self.resampled_features['onset_ms'] - \
+                                                      self.resampled_features['onset_ms'][0]
         elif self.video_features_df:
             self.video_features_df = resample_df(self.video_features_df, sampling_rate)
+            if 'onset_ms' in self.video_features_df.columns():
+                self.video_features_df['onset_ms'] = self.video_features_df['onset_ms'] - \
+                                                      self.video_features_df['onset_ms'][0]
             if self.audio_features_df:
                 self.audio_features_df = resample_df(self.audio_features_df, sampling_rate)
+                if 'onset_ms' in self.audio_features_df.columns():
+                    self.audio_features_df['onset_ms'] = self.audio_features_df['onset_ms'] - \
+                                                         self.audio_features_df['onset_ms'][0]
         elif self.audio_features_df:
             self.audio_features_df = resample_df(self.audio_features_df, sampling_rate)
-
+            if 'onset_ms' in self.audio_features_df.columns():
+                self.audio_features_df['onset_ms'] = self.audio_features_df['onset_ms'] - \
+                                                     self.audio_features_df['onset_ms'][0]
         return self
 
 
@@ -319,12 +334,12 @@ def extract_audio_features(in_file):
 
     Parameters
     ----------
-    in_file: str
+    in_file : str
         file path to video or audio file to be processed
 
     Returns
     -------
-    low_level_audio_df: DataFrame
+    low_level_audio_df : DataFrame
         Pandas dataframe with a column per low-level feature (index is time).
     """
 
@@ -333,11 +348,14 @@ def extract_audio_features(in_file):
     y, sr = librosa.load(in_file)
     onset_env = librosa.onset.onset_strength(y, sr=sr)
     time_seconds = np.arange(1, len(y)) / sr
-    dtempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sr, ac_size=1, aggregate=None)
+    dtempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sr, ac_size=10, aggregate=None)
     n_samples = len(dtempo)
     dtempo_samp_rate = time_seconds[-1] / n_samples
     time_ms = np.arange(0, time_seconds[-1], dtempo_samp_rate) * 1000
     dtempo_df = pd.DataFrame(dtempo, columns=['dynamic_tempo'], index=pd.to_datetime(time_ms, unit='ms'))
+    resamp_dtempo_df = dtempo_df.resample('10ms').mean()
+    if resamp_dtempo_df['dynamic_tempo'].isnull().values.any():
+        resamp_dtempo_df = dtempo_df.resample('10ms').bfill()
 
     # audio RMS to capture changes in intensity
     print('Extracting loudness...')
@@ -363,9 +381,9 @@ def extract_audio_features(in_file):
         low_level_audio_df.loc[b, 'beats'] = 1
 
     low_level_audio_df.index = pd.to_datetime(rmsres_df['onset'], unit='s')
+    low_level_audio_df = low_level_audio_df.resample('10ms').mean()
     low_level_audio_df['onset_ms'] = low_level_audio_df['onset_ms'] - low_level_audio_df['onset_ms'][0]
-    low_level_audio_df['beats'][low_level_audio_df['beats'] > 0] = 1
-    low_level_audio_df['dynamic_tempo'] = dtempo_df['dynamic_tempo']
+    low_level_audio_df['dynamic_tempo'] = resamp_dtempo_df['dynamic_tempo']
     low_level_audio_df.index.name = None
     print('Auditory feature extraction complete.')
     return low_level_audio_df
