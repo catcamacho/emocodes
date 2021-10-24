@@ -121,7 +121,6 @@ class ValidateTimeSeries:
         return
 
 
-# extract the unique code names (assumes Datavyu CSV export format)
 def get_code_labels(codes_df):
     """
     Pull the unique labels from the Datavyu codes.

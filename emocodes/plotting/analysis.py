@@ -25,6 +25,7 @@ def plot_heatmap(data):
     plt.tight_layout()
     return fig
 
+
 def plot_vif(vif_scores):
     """
     This function plots variance inflation factor scores with the horizontal lines denoting the standard cut offs:

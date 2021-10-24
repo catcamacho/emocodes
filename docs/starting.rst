@@ -4,13 +4,14 @@ Getting Started
 About and FAQ
 -------------
 
-**What is emocodes?**
+```{dropdown} What is emocodes?
 
 The emocodes library is a companion to the EmoCodes System (https://emocodes.org).
 The EmoCodes System is a standardized and reproducible means of characterizing socio-emotional content in complex video stimuli.
 We developed the system for cartoons, but can be used for most video stimuli.
+```
 
-**Why would anyone need a manual coding system when automatic algorithms exist?**
+```{dropdown} Why would anyone need a manual coding system when automatic algorithms exist?
 
 We made the EmoCodes system because there wasn't a way to automatically code emotional content in cartoon stimuli since
 the available algorithms were trained on live-action data. As developmental cognitive neuroscience researchers, this turned
@@ -20,11 +21,12 @@ Additionally, we developed the EmoCodes system with open science in mind includi
 data repository (https://emocodes.org/datasets/). We hope researchers will share their data, building a repository of
 potential training data for future algorithm development.
 
-**Is EmoCodes a video coding manual or a python library?**
+```{dropdown} Is EmoCodes a video coding manual or a python library?
 
 It's both! The EmoCodes System comprises the coding manual (available at (https://emocodes.org/manual/) and the emocodes python library.
 The library is used for video processing as well as processing the manual codes for neuroimaging analysis.
 Please refer the the examples for use cases.
+```
 
 Installation
 ------------
