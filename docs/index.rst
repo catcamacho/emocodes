@@ -2,10 +2,7 @@ EmoCodes
 ========
 
 Welcome! This website is the documentation to the emocodes python library, a companion to the EmoCodes system.
-
-```{card} Click her to check out the EmoCodes System
-:link: https://emocodes.org/
-```
+Learn more about the system at https://emocodes.org/
 
 .. toctree::
    :caption: Getting Started

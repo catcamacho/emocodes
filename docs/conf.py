@@ -55,7 +55,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'testing*']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'furo'
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -69,10 +69,8 @@ html_logo = os.path.abspath('../logos/circle_color.png')
 
 # Material theme options (see theme.conf for more information)
 html_theme_options = {
-    #'navigation_depth': 4,
-    #'collapse_navigation': False,
-    'sidebar_hide_name': True
+    'style_nav_header_background': '#343131',
+    'navigation_depth': 4,
+    'collapse_navigation': False,
+    'logo_only': True
 }
-
-# nb sphinx settings
-nbsphinx_execute = 'never'

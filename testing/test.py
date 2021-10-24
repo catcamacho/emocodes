@@ -24,7 +24,7 @@ def extract_audio_features(in_file):
     y, sr = librosa.load(in_file)
     onset_env = librosa.onset.onset_strength(y, sr=sr)
     time_seconds = np.arange(1, len(y)) / sr
-    dtempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sr, ac_size=1, aggregate=None)
+    dtempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sr, ac_size=10, aggregate=None)
     n_samples = len(dtempo)
     dtempo_samp_rate = time_seconds[-1] / n_samples
     time_ms = np.arange(0, time_seconds[-1], dtempo_samp_rate) * 1000
@@ -46,6 +46,8 @@ def extract_audio_features(in_file):
 
     # combine features into one dataframe
     print('Aggregating data...')
+    orig_spms = int(round((1 / rmsres_df['duration'][0]) * 1000,0))
+
     low_level_audio_df = pd.DataFrame()
     low_level_audio_df['onset_ms'] = rmsres_df['onset'] * 1000
     low_level_audio_df['rms'] = rmsres_df['rms']
@@ -55,7 +57,6 @@ def extract_audio_features(in_file):
 
     low_level_audio_df.index = pd.to_datetime(rmsres_df['onset'], unit='s')
     low_level_audio_df['onset_ms'] = low_level_audio_df['onset_ms'] - low_level_audio_df['onset_ms'][0]
-    low_level_audio_df['beats'][low_level_audio_df['beats'] > 0] = 1
     low_level_audio_df['dynamic_tempo'] = dtempo_df['dynamic_tempo']
     low_level_audio_df.index.name = None
     print('Auditory feature extraction complete.')
