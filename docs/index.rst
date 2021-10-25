@@ -12,10 +12,12 @@ To get up and running using this library, click "Getting Started" below.
 
    starting
 
+.. toctree::
    :caption: Examples
    :maxdepth: 1
    :ref: `Advanced Audio Processing<../examples/Example_ProcessAudioFromVideo.ipynb>`
 
 .. toctree::
    :caption: API
+   :maxdepth: 3
 
