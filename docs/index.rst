@@ -8,16 +8,16 @@ To get up and running using this library, click "Getting Started" below.
 
 .. toctree::
    :caption: Quick Start Guide
-   :maxdepth: 1
+   :maxdepth: 2
 
    starting
 
 .. toctree::
    :caption: Examples
    :maxdepth: 1
-   :ref: `Advanced Audio Processing<../examples/Example_ProcessAudioFromVideo.ipynb>`
+   ../examples/Example_ProcessAudioFromVideo.ipynb
 
 .. toctree::
    :caption: API
-   :maxdepth: 3
+   :maxdepth: 4
 

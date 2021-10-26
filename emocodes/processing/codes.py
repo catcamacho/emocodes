@@ -9,6 +9,7 @@ import logging as emolog
 import markdown
 import weasyprint as wp
 
+
 class CodeTimeSeries:
     """
     This class processes a Datavyu CSV. converting the codes to a time series for bio-behavioral analysis. In the
@@ -118,6 +119,31 @@ class CodeTimeSeries:
 
 
 class ValidateTimeSeries:
+    """
+    This class takes a Datavyu-exported CSV and produces a report of the following common problems:
+
+    - Missing values
+    - offsets before onsets
+    - offsets of zero
+    - not starting with the video
+    - not ending with the video file
+    - segment durations of zero
+
+    The report also gives the following descriptive information:
+
+    - list of unique values per code
+    - number of segments per code
+    - list of code segments (cells) with problematic data (offsets, onsets, or values)
+
+    This report can then be used to go back and clean the coding data in Datavyu before further processing.
+
+    Example:
+        >>> import emocodes as ec
+        >>> codes_file = 'datavyu_export_codes.csv'
+        >>> video_file = 'myvideo.mp4'
+        >>> ec.ValidateTimeSeries().run(codes_file, video_file)
+
+    """
     def __init__(self):
         self.in_file = None
         self.codes = None
@@ -150,13 +176,13 @@ class ValidateTimeSeries:
             f.write('# EmoCodes Code Validation Report\n\n')
             f.write('**Datavyu file:** {0} \n\n'.format(self.in_file))
             f.write('**video file:** {0} \n\n'.format(video_file))
+            f.write('**Code labels found**: ' + ', '.join(self.labels) + '\n\n')
             f.write('### Timestamps Report \n\n')
 
             f.write('### Values Report \n\n')
-            f.write('| Feature | # Empty Cells | Min Value | Max Value |\n')
-            f.write('| :------ | :-----------: | :-------: | :-------: |\n')
+            f.write('| Label | # Empty Cells | Min Value | Max Value |\n')
+            f.write('| :---- | :-----------: | :-------: | :-------: |\n')
             for c in self.labels:
-                not_nan = (sum(self.codes[c] != 0) / len(self.codes)) * 100
                 f.write('| {0} | {1}% | {2} | {3} |\n'.format(c, round(not_nan, 2), round(self.features[c].min(), 1),
                                                               round(self.features[c].max(), 1)))
             f.write('\n')
