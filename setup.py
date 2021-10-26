@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='emocodes',
     packages=find_packages(),
-    version='0.1.2',
+    version='1.0.0',
     description='A library designed to accompany the EmoCodes system.',
     author='M. Catalina Camacho',
     license='MIT',
