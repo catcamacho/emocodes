@@ -150,8 +150,8 @@ class ValidateTimeSeries:
         self.labels = None
         self.video_duration = None
         self.report_name = None
-        self.timestamps_report = None
-        self.values_report = None
+        self.time_report = None
+        self.val_report = None
 
     def run(self, file_name, video_file, report_filename=None):
         today = datetime.now()
@@ -165,6 +165,8 @@ class ValidateTimeSeries:
             self.report_name = file_name[:-4] + '_report_{0}'.format(today.strftime('%Y%m%d'))
         self.check_timestamps()
         self.check_values()
+        report = self.val_report.merge(self.time_report, left_index=True, right_index=True)
+        report.to_csv(self.report_name + '.csv')
 
         # set filenames for each report output type
         reportmd = self.report_name + '.md'
@@ -176,15 +178,26 @@ class ValidateTimeSeries:
             f.write('# EmoCodes Code Validation Report\n\n')
             f.write('**Datavyu file:** {0} \n\n'.format(self.in_file))
             f.write('**video file:** {0} \n\n'.format(video_file))
+            f.write('**Full Report Table**: {0}\n\n'.format(self.report_name + '.csv'))
             f.write('**Code labels found**: ' + ', '.join(self.labels) + '\n\n')
-            f.write('### Timestamps Report \n\n')
-
-            f.write('### Values Report \n\n')
-            f.write('| Label | # Empty Cells | Min Value | Max Value |\n')
-            f.write('| :---- | :-----------: | :-------: | :-------: |\n')
+            f.write('### Timestamps Brief Report \n\n')
+            f.write('Please note that the cell numbers are zero-indexed, meaning the count starts at 0, not 1.\n\n')
+            f.write('| Label | Cells with Bad Onsets | Cells with Bad Offsets | Cells with Bad Durations |\n')
+            f.write('| :---- | :-------------------: | :--------------------: | :----------------------: |\n')
             for c in self.labels:
-                f.write('| {0} | {1}% | {2} | {3} |\n'.format(c, round(not_nan, 2), round(self.features[c].min(), 1),
-                                                              round(self.features[c].max(), 1)))
+                f.write('| {0} | {1} | {2} | {3} |\n'.format(c, self.time_report.loc[c, 'segs_bad_onsets'],
+                                                             self.time_report.loc[c, 'segs_bad_offsets'],
+                                                             self.time_report.loc[c, 'segs_bad_duration']))
+            f.write('\n')
+            f.write('******\n\n')
+            f.write('### Values Brief Report \n\n')
+            f.write('Please note that the cell numbers are zero-indexed, meaning the count starts at 0, not 1.\n\n')
+            f.write('| Label | Unique Values | # Empty Cells | List Empty Cells |\n')
+            f.write('| :---- | :-----------: | :-----------: | :--------------: |\n')
+            for c in self.labels:
+                f.write('| {0} | {1} | {2} | {3} |\n'.format(c, self.val_report.loc[c, 'unique_values'],
+                                                             self.val_report.loc[c, 'num_blank_cells'],
+                                                             self.val_report.loc[c, 'list_blank_cells']))
             f.write('\n')
             f.write('******\n\n')
 
@@ -201,26 +214,39 @@ class ValidateTimeSeries:
         return self
 
     def check_timestamps(self):
-        self.timestamps_report = timestamps_report(self.codes, self.video_duration, self.labels)
+        self.time_report = timestamps_report(self.codes, self.video_duration, self.labels)
         return self
 
     def check_values(self):
-        self.values_report = values_report(self.codes, self.labels)
+        self.val_report = values_report(self.codes, self.labels)
         return self
 
 
 def timestamps_report(codes_df, video_length, labels):
     """
+    This function takes a dataframe of Datavyu-exported codes and produces a report that includes the following for
+    each code label timestamps:
+    - missing offsets
+    - offsets of zero
+    - offsets labeled as before their corresponding onsets
+    - whether or not the code starts at zero
+    - whether or not the code ends with the video
+    - overlapping onsets or offsets
+    - a list of segments with potentially bad timestamps
 
     Parameters
     ----------
-    codes_df
-    video_length
-    labels
+    codes_df: DataFrame
+        A pandas DataFrame object that includes the Datavyu-exported values.
+    video_length: int
+        video length in milliseconds (output of get_video_length function)
+    labels: list
+        List of unique code labels included in codes_df (output of get_code_labels function)
 
     Returns
     -------
-    summary_report
+    summary_report: DataFrame
+        A pandas dataframe with the report for each code in codes_df
     """
     summary_report = pd.DataFrame(index=labels, columns=['starts_at_zero', 'ends_with_video', 'num_bad_durations',
                                                          'segs_bad_duration', 'num_bad_onsets', 'segs_bad_onsets',
@@ -233,9 +259,12 @@ def timestamps_report(codes_df, video_length, labels):
         # check durations
         label_df['dur'] = label_df[label + '.offset'] - label_df[label + '.onset']
         dur = sum((label_df['dur'] <= 0))
-        segs = label_df.loc[label_df['dur'] <= 0, 'dur'].index.to_list()
+        segs = label_df.loc[label_df['dur'] <= 0, 'dur'].index.astype(str).to_list()
         summary_report.loc[label, 'num_bad_durations'] = dur
-        summary_report.loc[label, 'segs_bad_duration'] = '{0}'.format(segs)
+        if len(segs) == 0:
+            summary_report.loc[label, 'segs_bad_duration'] = 'None'
+        else:
+            summary_report.loc[label, 'segs_bad_duration'] = ','.join(segs)
 
         bad_onsets = []
         bad_offsets = []
@@ -265,13 +294,63 @@ def timestamps_report(codes_df, video_length, labels):
             if i > 0:
                 if label_df.loc[i, label + '.offset'] < label_df.loc[i - 1, label + '.offset']:
                     bad_offsets.append(i)
-        bad_offsets = np.unique(bad_offsets)
+        bad_offsets = np.unique(bad_offsets).astype(str)
         summary_report.loc[label, 'num_bad_offsets'] = len(bad_offsets)
-        summary_report.loc[label, 'segs_bad_offsets'] = '{0}'.format(bad_offsets)
-        bad_onsets = np.unique(bad_onsets)
+        if len(bad_offsets) == 0:
+            summary_report.loc[label, 'segs_bad_offsets'] = 'None'
+        else:
+            summary_report.loc[label, 'segs_bad_offsets'] = ','.join(bad_offsets)
+        bad_onsets = np.unique(bad_onsets).astype(str)
         summary_report.loc[label, 'num_bad_onsets'] = len(bad_onsets)
-        summary_report.loc[label, 'segs_bad_onsets'] = '{0}'.format(bad_onsets)
+        if len(bad_onsets) == 0:
+            summary_report.loc[label, 'segs_bad_onsets'] = 'None'
+        else:
+            summary_report.loc[label, 'segs_bad_onsets'] = ','.join(bad_onsets)
 
+    return summary_report
+
+
+def values_report(codes_df, labels):
+    """
+    This function takes a dataframe of Datavyu-exported codes and produces a report that includes the following for
+    each code label:
+    - number of values coded
+    - number of blank values found
+    - list of code segments with blank values (correspond to cells in Datavyu)
+    - list of unique values found
+
+    Parameters
+    ----------
+    codes_df: DataFrame
+        Pandas dataframe object with Datavyu CSV data.
+    labels: list
+        List of unique code labels included in codes_df (output of get_code_labels function)
+
+    Returns
+    -------
+    summary_report: DataFrame
+        A dataframe with the report for each code in codes_df
+
+    """
+    summary_report = pd.DataFrame(index=labels, columns=['num_values', 'unique_values', 'num_blank_cells',
+                                                         'list_blank_cells'])
+
+    for label in labels:
+        label_df = codes_df.loc[:, [label + '.ordinal', label + '.code01']]
+        label_df = label_df.dropna(axis=0, subset=[label + '.ordinal'])
+        summary_report.loc[label, 'num_blank_cells'] = label_df[label + '.code01'].isna().sum()
+        summary_report.loc[label, 'num_values'] = len(label_df) - summary_report.loc[label, 'num_blank_cells']
+        unique_values = np.unique(label_df[label + '.code01'])
+        unique_values = unique_values[~np.isnan(unique_values)].astype(str)
+        summary_report.loc[label, 'unique_values'] =  ','.join(unique_values)
+        blanks = []
+        for i in label_df.index:
+            if np.isnan(label_df.loc[i, label + '.code01']):
+                blanks.append(str(i))
+        if len(blanks) == 0:
+            summary_report.loc[label, 'list_blank_cells'] = 'None'
+        else:
+            summary_report.loc[label, 'list_blank_cells'] = ','.join(blanks)
     return summary_report
 
 
