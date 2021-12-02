@@ -55,8 +55,7 @@ class SummarizeVideoFeatures:
         out_dir: filepath
             The full or relative path to the folder where you want the report saved to.
         convolve_hrf: bool
-            Setting to convolve each feature with a double-gamma hemodynamic response function (HRF) before creating the
-             report
+            Setting to convolve each feature with a double-gamma hemodynamic response function (HRF) before reporting
         column_names: list
             The columns to include in the feature analysis
         sampling_rate: float
