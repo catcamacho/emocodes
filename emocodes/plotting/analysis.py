@@ -29,6 +29,7 @@ def plot_heatmap(data):
 def plot_vif(vif_scores):
     """
     This function plots variance inflation factor scores with the horizontal lines denoting the standard cut offs:
+
      - <2 = not collinear
      - 2-5 = weakly collinear and likely okay to include together in a model
      - 5-10 = moderately collinear, proceed with caution
