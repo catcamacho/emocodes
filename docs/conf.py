@@ -22,7 +22,7 @@ copyright = '2021, M. Catalina Camacho'
 author = 'M. Catalina Camacho; Elizabeth M. Williams'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.4'
+release = '1.0.5'
 autoclass_content = 'class'
 autosummary_generate = True
 
