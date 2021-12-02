@@ -108,12 +108,12 @@ class ExtractVideoFeatures:
             if 'onset_ms' in self.visual_features_df.columns():
                 self.visual_features_df['onset_ms'] = self.visual_features_df['onset_ms'] - \
                                                       self.visual_features_df['onset_ms'][0]
-            if self.audio_features_df:
+            if isinstance(self.audio_features_df, pd.DataFrame):
                 self.audio_features_df = resample_df(self.audio_features_df, sampling_rate)
                 if 'onset_ms' in self.audio_features_df.columns():
                     self.audio_features_df['onset_ms'] = self.audio_features_df['onset_ms'] - \
                                                          self.audio_features_df['onset_ms'][0]
-        elif self.audio_features_df:
+        elif isinstance(self.audio_features_df, pd.DataFrame):
             self.audio_features_df = resample_df(self.audio_features_df, sampling_rate)
             if 'onset_ms' in self.audio_features_df.columns():
                 self.audio_features_df['onset_ms'] = self.audio_features_df['onset_ms'] - \
