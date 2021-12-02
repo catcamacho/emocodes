@@ -47,6 +47,7 @@ class SummarizeVideoFeatures:
                 time_col='index'):
         """
         This function runs the methods to create a features report.
+
         Parameters
         ----------
         features: filepath
@@ -197,6 +198,7 @@ def pairwise_ips(features, column_names='all'):
     This function computes the pair-wise instantaneous phase synchrony (IPS) between columns in a dataframe.  It returns
     both the mean IPS in a NxN matrix as well as a numpy array that is size NxNxT containing the pair-wise IPS at each
     time point.
+
     Parameters
     ----------
     features: DataFrame
