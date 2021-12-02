@@ -53,8 +53,8 @@ class ExtractVideoFeatures:
 
         self.sampling_rate = sampling_rate
         self.video = video_file
-        self.extract_visual_features(self.video)
-        self.extract_audio_features(self.video)
+        self = self.extract_visual_features(self.video)
+        self = self.extract_audio_features(self.video)
         self.combined_df = self.video_features_df.merge(self.audio_features_df, left_index=True, right_index=True)
         self.resample_features(self.sampling_rate)
         if not outfile:

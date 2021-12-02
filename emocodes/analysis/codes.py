@@ -33,7 +33,7 @@ class InterraterReliability:
         """
         self.list_of_codes = list_of_codes
         if not list_of_raters:
-            list_of_raters = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(list_of_codes))]
+            list_of_raters = ['rater{0}'.format(str(i).zfill(2)) for i in range(0, len(list_of_codes))]
         self.list_of_raters = list_of_raters
         self.long_codes = compile_ratings(self.list_of_codes, self.list_of_raters, self.rater_col_name)
         return self
@@ -87,7 +87,7 @@ class InterraterReliability:
         """
         self.list_of_codes = list_of_codes
         if not list_of_raters:
-            list_of_raters = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(list_of_codes))]
+            list_of_raters = ['rater{0}'.format(str(i).zfill(2)) for i in range(0, len(list_of_codes))]
         self.list_of_raters = list_of_raters
         self.df_list_to_long_df(self, self.list_of_codes, list_of_raters=self.list_of_raters,
                                 rater_col_name=self.rater_col_name)
@@ -141,7 +141,7 @@ class Consensus:
         """
         self.codes_list = trainee_codes_list
         if not trainee_list:
-            trainee_list = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(trainee_codes_list))]
+            trainee_list = ['rater{0}'.format(str(i).zfill(2)) for i in range(0, len(trainee_codes_list))]
 
         self.raters = trainee_list
         self.original_codes = exemplar_code_file
@@ -170,7 +170,7 @@ class Consensus:
         """
         self.codes_list = codes_list
         if not rater_list:
-            rater_list = ['rater{0}'.format(i.astype(str).zfill(2)) for i in range(0, len(codes_list))]
+            rater_list = ['rater{0}'.format(str(i).zfill(2)) for i in range(0, len(codes_list))]
 
         self.raters = rater_list
         self.consensus_scores = compute_exact_match(self.codes_list, self.raters, reference=None)
@@ -211,7 +211,7 @@ def compile_ratings(list_dfs, list_raters=None):
         if list_raters:
             rater = list_raters[i]
         else:
-            rater = 'rater{0}'.format(i.astype(str).zfill(2))
+            rater = 'rater{0}'.format(str(i).zfill(2))
 
         if not isinstance(df, pd.DataFrame):
             if not os.path.isfile(df):
