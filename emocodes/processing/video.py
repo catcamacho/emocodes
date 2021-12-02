@@ -32,7 +32,6 @@ class ExtractVideoFeatures:
         self.video = None
         self.audio_features_df = None
         self.visual_features_df = None
-        self.video_features_df = None
         self.combined_df = None
         self.resampled_features = None
 
@@ -53,9 +52,9 @@ class ExtractVideoFeatures:
 
         self.sampling_rate = sampling_rate
         self.video = video_file
-        self = self.extract_visual_features(self.video)
-        self = self.extract_audio_features(self.video)
-        self.combined_df = self.video_features_df.merge(self.audio_features_df, left_index=True, right_index=True)
+        self.extract_visual_features(self.video)
+        self.extract_audio_features(self.video)
+        self.combined_df = self.visual_features_df.merge(self.audio_features_df, left_index=True, right_index=True)
         self.resample_features(self.sampling_rate)
         if not outfile:
             outfile = video_file.replace('.mp4', '')
@@ -104,11 +103,11 @@ class ExtractVideoFeatures:
             if 'onset_ms' in self.resampled_features.columns():
                 self.resampled_features['onset_ms'] = self.resampled_features['onset_ms'] - \
                                                       self.resampled_features['onset_ms'][0]
-        elif self.video_features_df:
-            self.video_features_df = resample_df(self.video_features_df, sampling_rate)
-            if 'onset_ms' in self.video_features_df.columns():
-                self.video_features_df['onset_ms'] = self.video_features_df['onset_ms'] - \
-                                                      self.video_features_df['onset_ms'][0]
+        elif self.visual_features_df:
+            self.visual_features_df = resample_df(self.visual_features_df, sampling_rate)
+            if 'onset_ms' in self.visual_features_df.columns():
+                self.visual_features_df['onset_ms'] = self.visual_features_df['onset_ms'] - \
+                                                      self.visual_features_df['onset_ms'][0]
             if self.audio_features_df:
                 self.audio_features_df = resample_df(self.audio_features_df, sampling_rate)
                 if 'onset_ms' in self.audio_features_df.columns():
