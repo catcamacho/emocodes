@@ -54,12 +54,22 @@ class ExtractVideoFeatures:
         self.video = video_file
         self.extract_visual_features(self.video)
         self.extract_audio_features(self.video)
-        self.combined_df = self.visual_features_df.merge(self.audio_features_df, left_index=True, right_index=True)
         self.resample_features(self.sampling_rate)
+
+        # harmonize time scales and columns across dataframes and combine
+        self.audio_features_df.index = self.audio_features_df['onset_ms']
+        self.audio_features_df.index.name = 'time_ms'
+        self.audio_features_df = self.audio_features_df.drop('onset_ms', axis=1)
+        self.visual_features_df.index = self.visual_features_df['onset_ms']
+        self.visual_features_df.index.name = 'time_ms'
+        self.visual_features_df = self.visual_features_df.drop(['onset_ms','duration'], axis=1)
+        self.combined_df = self.visual_features_df.merge(self.audio_features_df, left_index=True, right_index=True)
+
+        # save features as a csv
         if not outfile:
             outfile = video_file.replace('.mp4', '')
 
-        self.resampled_features.to_csv(outfile + '_features.csv')
+        self.combined_df.to_csv(outfile + '_features.csv')
         return self
 
     def extract_audio_features(self, video_file):
@@ -98,30 +108,26 @@ class ExtractVideoFeatures:
 
         """
         self.sampling_rate = sampling_rate
-        if isinstance(self.combined_df, pd.DataFrame):
-            self.resampled_features = resample_df(self.combined_df, sampling_rate)
-            if 'onset_ms' in self.resampled_features.columns:
-                self.resampled_features['onset_ms'] = self.resampled_features['onset_ms'] - \
-                                                      self.resampled_features['onset_ms'][0]
-        elif isinstance(self.visual_features_df, pd.DataFrame):
-            self.visual_features_df = resample_df(self.visual_features_df, sampling_rate)
+        resample = 1000/sampling_rate
+        if isinstance(self.visual_features_df, pd.DataFrame):
+            self.visual_features_df = resample_df(self.visual_features_df, sampling_rate, time_col_units='ms')
             if 'onset_ms' in self.visual_features_df.columns:
                 self.visual_features_df['onset_ms'] = self.visual_features_df['onset_ms'] - \
                                                       self.visual_features_df['onset_ms'][0]
-            if isinstance(self.audio_features_df, pd.DataFrame):
-                self.audio_features_df = resample_df(self.audio_features_df, sampling_rate)
-                if 'onset_ms' in self.audio_features_df.columns:
-                    self.audio_features_df['onset_ms'] = self.audio_features_df['onset_ms'] - \
-                                                         self.audio_features_df['onset_ms'][0]
-        elif isinstance(self.audio_features_df, pd.DataFrame):
-            self.audio_features_df = resample_df(self.audio_features_df, sampling_rate)
+
+        if isinstance(self.audio_features_df, pd.DataFrame):
+            self.audio_features_df = resample_df(self.audio_features_df, sampling_rate, time_col_units='ms')
             if 'onset_ms' in self.audio_features_df.columns:
                 self.audio_features_df['onset_ms'] = self.audio_features_df['onset_ms'] - \
                                                      self.audio_features_df['onset_ms'][0]
+                # fix rounding
+                self.audio_features_df['onset_ms'] = \
+                    round(self.audio_features_df['onset_ms']/resample).astype(int) * resample
+
         return self
 
 
-def resample_df(df, sampling_rate, time_col=None, time_col_units=None):
+def resample_df(df, sampling_rate, time_col=None, time_col_units='ms'):
     """
     This function resamples an input dataframe to a desired sampling rate. The default parameters assume that the index
     of the dataframe is a DateTimeIndex. If that is not the case, the time_col and time_col_units parameters are
@@ -146,7 +152,7 @@ def resample_df(df, sampling_rate, time_col=None, time_col_units=None):
         The output resamples DataFrame (with a DateTime index)
     """
 
-    resample_rate = 1000*sampling_rate
+    resample_rate = 1000/sampling_rate
 
     if not time_col:
         if not isinstance(df.index, pd.DatetimeIndex):
