@@ -83,7 +83,7 @@ class SummarizeVideoFeatures:
 
         if convolve_hrf:
             self.hrf_conv_features = hrf_convolve_features(self.features, column_names=self.column_names,
-                                                           time_col=self.time_col, units='ms')
+                                                           time_col=self.time_col, units=units)
         else:
             self.hrf_conv_features = self.features
         self.compute_plot_corr()
