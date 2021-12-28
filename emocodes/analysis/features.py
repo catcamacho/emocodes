@@ -302,7 +302,7 @@ def vif_collinear(features, column_names='all'):
     return vif_scores
 
 
-def hrf(time, time_to_peak=6, undershoot_dur=12):
+def hrf(time, time_to_peak=5, undershoot_dur=12):
     """
     This function creates a hemodynamic response function timeseries.
 
@@ -311,7 +311,7 @@ def hrf(time, time_to_peak=6, undershoot_dur=12):
     time: numpy array
         a 1D numpy array that makes up the x-axis (time) of our HRF in seconds
     time_to_peak: int
-        Time to HRF peak in seconds. Default is 6 seconds.
+        Time to HRF peak in seconds. Default is 5 seconds.
     undershoot_dur: int
         Duration of the post-peak undershoot. Default is 12 seconds.
 
@@ -329,7 +329,7 @@ def hrf(time, time_to_peak=6, undershoot_dur=12):
     return hrf_timeseries
 
 
-def hrf_convolve_features(features, column_names='all', time_col='index', units='s'):
+def hrf_convolve_features(features, column_names='all', time_col='index', units='s', time_to_peak=5, undershoot_dur=12):
     """
     This function convolves a hemodynamic response function with each column in a timeseries dataframe.
 
@@ -343,6 +343,10 @@ def hrf_convolve_features(features, column_names='all', time_col='index', units=
         The name of the time column to use if not the index. Default is "index".
     units: str
         Must be 'ms','s','m', or 'h' to denote milliseconds, seconds, minutes, or hours respectively.
+    time_to_peak: int
+        Time to peak for HRF model. Default is 5 seconds.
+    undershoot_dur: int
+        Undershoot duration for HRF model. Default is 12 seconds.
 
     Returns
     -------
@@ -369,7 +373,7 @@ def hrf_convolve_features(features, column_names='all', time_col='index', units=
         time = features.index.to_numpy()
 
     convolved_features = pd.DataFrame(index=time)
-    hrf_sig = hrf(time)
+    hrf_sig = hrf(time, time_to_peak=time_to_peak, undershoot_dur=undershoot_dur)
     for a in column_names:
         convolved_features[a] = np.convolve(features[a], hrf_sig)[:len(time)]
 
