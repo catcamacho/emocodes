@@ -112,7 +112,7 @@ class SummarizeVideoFeatures:
                 f.write('## Features Included in this Analysis\n\n')
                 f.write('### Original Features\n\n')
                 f.write('![feature plots]({0})\n\n'.format(self.feature_plot))
-                f.write('### After HRF convolution (6s peak, 12s undershoot)\n\n')
+                f.write('### After HRF convolution\n\n')
                 f.write('![hrf-convolved feature plots]({0})\n\n'.format(self.hrf_feature_plots))
             else:
                 f.write('## Features Included in this Analysis\n\n')

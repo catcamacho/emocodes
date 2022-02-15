@@ -89,8 +89,7 @@ class InterraterReliability:
         if not list_of_raters:
             list_of_raters = ['rater{0}'.format(str(i).zfill(2)) for i in range(0, len(list_of_codes))]
         self.list_of_raters = list_of_raters
-        self.df_list_to_long_df(self, self.list_of_codes, list_of_raters=self.list_of_raters,
-                                rater_col_name=self.rater_col_name)
+        self.df_list_to_long_df(self, self.list_of_codes, list_of_raters=self.list_of_raters)
         self.compute_iccs(self, column_labels)
         self.save_iccs(self, out_file_name)
         print(self.iccs)
