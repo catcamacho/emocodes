@@ -1,2 +1,10 @@
 ,instance_level_ICC,instance_level_consistency
-closeup,0.562,moderate
+closeup,0.5622412435549008,moderate
+collective,,
+has_body,0.935182254341633,excellent
+has_faces,0.8243061902062628,good
+has_words,0.980988077516485,excellent
+num_chars,0.899860612566232,good
+time_of_day,,
+speaking,1.0,excellent
+whole_words,1.0,excellent

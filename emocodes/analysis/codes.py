@@ -39,7 +39,7 @@ class InterraterReliability:
         self.long_codes = compile_ratings(self.list_of_codes, list_raters=self.list_of_raters)
         return self
 
-    def compute_iccs(self, column_labels):
+    def compute_iccs(self, column_labels=None):
         """
         This method computes the intraclass correlation across raters in a dataset.
 
@@ -255,20 +255,20 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='onset_ms', col
 
     """
     if not column_labels:
-        column_labels = ratings.columns
-        column_labels.drop(rater_col_name)
+        column_labels = ratings.columns.to_list()
+        column_labels.remove(rater_col_name)
 
     if index_label in column_labels:
-        column_labels.drop(index_label)
+        column_labels.remove(index_label)
     else:
         ratings[index_label] = ratings.index
         ratings.index.name = 'index'
 
     icc_df = pd.DataFrame(columns=['instance_level_ICC', 'instance_level_consistency'])
 
-    for x in column_labels:
+    for i, x in enumerate(column_labels):
         icc = pg.intraclass_corr(data=ratings, targets=index_label, raters=rater_col_name,
-                                 ratings=x, nan_policy='omit').round(3)
+                                 ratings=x, nan_policy='omit')
         icc_df.loc[x, 'instance_level_ICC'] = icc.loc[1, 'ICC']
 
         # evaluate item-level ICCs
@@ -281,7 +281,7 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='onset_ms', col
         elif icc.loc[1, 'ICC'] >= 0.90:
             icc_df.loc[x, 'instance_level_consistency'] = 'excellent'
 
-        return icc_df
+    return icc_df
 
 
 def compute_exact_match(ratings_list, raters_list, reference):
