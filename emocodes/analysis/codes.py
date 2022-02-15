@@ -32,10 +32,11 @@ class InterraterReliability:
 
         """
         self.list_of_codes = list_of_codes
-        if not list_of_raters:
+        if not isinstance(list_of_raters, list):
             list_of_raters = ['rater{0}'.format(str(i).zfill(2)) for i in range(0, len(list_of_codes))]
+
         self.list_of_raters = list_of_raters
-        self.long_codes = compile_ratings(self.list_of_codes, self.list_of_raters, self.rater_col_name)
+        self.long_codes = compile_ratings(self.list_of_codes, list_raters=self.list_of_raters)
         return self
 
     def compute_iccs(self, column_labels):
@@ -49,7 +50,7 @@ class InterraterReliability:
             not the index/time column and "rater".
 
         """
-        self.iccs = interrater_iccs(self.long_codes, self.rater_col_name, column_labels)
+        self.iccs = interrater_iccs(self.long_codes, self.rater_col_name, column_labels=column_labels)
         return self
 
     def save_iccs(self, out_file_name):
@@ -89,9 +90,9 @@ class InterraterReliability:
         if not list_of_raters:
             list_of_raters = ['rater{0}'.format(str(i).zfill(2)) for i in range(0, len(list_of_codes))]
         self.list_of_raters = list_of_raters
-        self.df_list_to_long_df(self, self.list_of_codes, list_of_raters=self.list_of_raters)
-        self.compute_iccs(self, column_labels)
-        self.save_iccs(self, out_file_name)
+        self.df_list_to_long_df(self.list_of_codes, list_of_raters=self.list_of_raters)
+        self.compute_iccs(column_labels)
+        self.save_iccs(out_file_name)
         print(self.iccs)
 
 
@@ -229,7 +230,7 @@ def compile_ratings(list_dfs, list_raters=None):
     return single_df
 
 
-def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_labels=None):
+def interrater_iccs(ratings, rater_col_name='rater', index_label='onset_ms', column_labels=None):
     """
     This function computes the interrater ICCs using the Pingouin library. By default it computes the absolute agreement
     between raters assuming a random sample of raters at each target (each rating at each instance).
@@ -238,7 +239,7 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
     Parameters
     ----------
     index_label: str
-        The label denoting each measurement. This must be consistent across all raters. Default is "time".
+        The label denoting each measurement. This must be consistent across all raters. Default is "onset_ms".
     ratings: DataFrame
         DataFrame with the ratings information stored in a long format.
     rater_col_name: str
@@ -256,7 +257,12 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
     if not column_labels:
         column_labels = ratings.columns
         column_labels.drop(rater_col_name)
+
+    if index_label in column_labels:
         column_labels.drop(index_label)
+    else:
+        ratings[index_label] = ratings.index
+        ratings.index.name = 'index'
 
     icc_df = pd.DataFrame(columns=['instance_level_ICC', 'instance_level_consistency'])
 
@@ -275,7 +281,7 @@ def interrater_iccs(ratings, rater_col_name='rater', index_label='time', column_
         elif icc.loc[1, 'ICC'] >= 0.90:
             icc_df.loc[x, 'instance_level_consistency'] = 'excellent'
 
-    return icc_df
+        return icc_df
 
 
 def compute_exact_match(ratings_list, raters_list, reference):
