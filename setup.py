@@ -9,7 +9,7 @@ setup(
     license='MIT',
     download_url='https://github.com/catcamacho/emocodes/archive/refs/tags/v.1.0.0.tar.gz',
     install_requires=['pandas', 'numpy', 'moviepy', 'opencv-python', 'matplotlib', 'openpyxl', 'pliers',
-                      'librosa', 'python-magic-bin==0.4.14', 'seaborn', 'pingouin', 'scipy', 'scikit-learn',
+                      'librosa', 'seaborn', 'pingouin', 'scipy', 'scikit-learn',
                       'markdown', 'weasyprint'],
     python_requires='>=3.6'
 )
